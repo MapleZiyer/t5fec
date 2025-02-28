@@ -30,7 +30,7 @@ def main():
         bf16=True,
         logging_steps=10,
         save_strategy="epoch",
-        evaluation_strategy="no",
+        eval_strategy="no",
         save_total_limit=2,
         do_train=True,
         remove_unused_columns=True,
@@ -67,7 +67,7 @@ Corrected statement: """
         # 对输入文本进行编码
         model_inputs = tokenizer(
             inputs,
-            max_length=3000,  # 增加最大长度以容纳更长的输入
+            max_length=4096,  # 增加最大长度以容纳更长的输入
             truncation=True,
             padding='max_length',
             return_tensors='pt'
