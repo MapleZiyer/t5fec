@@ -94,24 +94,23 @@ Corrected statement: """
             inputs,
             max_length=4096,
             truncation=True,
-            padding=True,
-            return_tensors=None  # 不在这里转换为tensor
+            padding=True,  # Ensure padding
+            return_tensors='pt'  # Ensure tensors are returned
         )
         
         labels = tokenizer(
             targets,
             max_length=256,
             truncation=True,
-            padding=True,
-            return_tensors=None  # 不在这里转换为tensor
+            padding=True,  # Ensure padding
+            return_tensors='pt'  # Ensure tensors are returned
         )
         
         model_inputs['labels'] = labels['input_ids']
         
-        # 确保所有字段都是列表形式
-        for key in ['input_ids', 'attention_mask', 'labels']:
-            if key in model_inputs and isinstance(model_inputs[key], torch.Tensor):
-                model_inputs[key] = model_inputs[key].tolist()
+        # Ensure labels and inputs are flattened and correct
+        model_inputs['input_ids'] = model_inputs['input_ids'].squeeze()  # Remove extra dimensions
+        model_inputs['labels'] = model_inputs['labels'].squeeze()  # Remove extra dimensions
 
         return model_inputs
 
