@@ -108,9 +108,9 @@ Corrected statement: """
         
         model_inputs['labels'] = labels['input_ids']
         
-        # Flatten the tensors in case of nested lists
-        model_inputs['input_ids'] = model_inputs['input_ids'].squeeze()  # Remove unnecessary dimensions
-        model_inputs['labels'] = model_inputs['labels'].squeeze()  # Remove unnecessary dimensions
+        # Ensure labels and inputs are flattened and correct
+        model_inputs['input_ids'] = model_inputs['input_ids'].squeeze()  # Remove extra dimensions
+        model_inputs['labels'] = model_inputs['labels'].squeeze()  # Remove extra dimensions
 
         return model_inputs
 
