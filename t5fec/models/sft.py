@@ -17,6 +17,8 @@ from trl import (
     get_quantization_config,
 )
 
+import wandb  # 添加 wandb 导入
+
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
@@ -41,6 +43,9 @@ def main():
         do_train=True,
         remove_unused_columns=True,
         report_to=["wandb"],  # 添加wandb日志
+        run_name="flan-t5-large-sft-run",  # 设置wandb运行名称
+        # wandb相关配置
+        report_to=["wandb"] if os.environ.get("WANDB_DISABLED") != "true" else [],
     )
 
     # 设置随机种子
@@ -128,6 +133,8 @@ Corrected statement: """
 
     # 开始训练
     logger.info("*** Starting training ***")
+    # 启动wandb日志记录
+    wandb.init(project="t5fec-sft", name=training_args.run_name)  # 在wandb上创建一个项目和运行
     train_result = trainer.train(resume_from_checkpoint=last_checkpoint)
     metrics = train_result.metrics
     metrics["train_samples"] = len(processed_dataset)
@@ -143,6 +150,9 @@ Corrected statement: """
     # 恢复k,v cache用于快速推理
     trainer.model.config.use_cache = True
     trainer.model.config.save_pretrained(training_args.output_dir)
+
+    # 完成wandb日志
+    wandb.finish()  # 完成当前的wandb日志
 
 if __name__ == "__main__":
     main()
