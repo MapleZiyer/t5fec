@@ -94,7 +94,7 @@ Corrected statement: """
             inputs,
             max_length=4096,
             truncation=True,
-            padding=True,
+            padding='max_length',
             return_tensors=None
         )
         
@@ -102,7 +102,7 @@ Corrected statement: """
             targets,
             max_length=256,
             truncation=True,
-            padding=True,
+            padding='max_length',
             return_tensors=None
         )
         
