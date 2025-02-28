@@ -107,6 +107,11 @@ Corrected statement: """
         )
         
         model_inputs['labels'] = labels['input_ids']
+        
+        # Flatten the tensors in case of nested lists
+        model_inputs['input_ids'] = model_inputs['input_ids'].squeeze()  # Remove unnecessary dimensions
+        model_inputs['labels'] = model_inputs['labels'].squeeze()  # Remove unnecessary dimensions
+
         return model_inputs
 
     # 处理数据集
