@@ -117,8 +117,7 @@ Corrected statement: """
     torch_dtype = torch.bfloat16 if training_args.bf16 else torch.float32
     model_kwargs = dict(
         torch_dtype=torch_dtype,
-        use_cache=False if training_args.gradient_checkpointing else True,
-        device_map=get_kbit_device_map() if get_quantization_config(None) is not None else None,
+        use_cache=False if training_args.gradient_checkpointing else True
     )
 
     # 初始化SFT训练器
