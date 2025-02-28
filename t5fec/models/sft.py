@@ -109,8 +109,8 @@ Corrected statement: """
         model_inputs['labels'] = labels['input_ids']
         
         # Ensure labels and inputs are flattened and correct
-        model_inputs['input_ids'] = model_inputs['input_ids'].squeeze()  # Remove extra dimensions
-        model_inputs['labels'] = model_inputs['labels'].squeeze()  # Remove extra dimensions
+        model_inputs['input_ids'] = model_inputs['input_ids'].squeeze(0)  # Remove extra dimensions
+        model_inputs['labels'] = model_inputs['labels'].squeeze(0)  # Remove extra dimensions
 
         return model_inputs
 
