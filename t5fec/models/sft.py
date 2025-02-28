@@ -93,16 +93,16 @@ def main():
             inputs,
             max_length=4096,
             truncation=True,
-            padding=True,
-            return_tensors=None  # 移除return_tensors参数
+            padding='max_length',
+            return_tensors=None
         )
         
         labels = tokenizer(
             targets,
-            max_length=256,
+            max_length=4096,
             truncation=True,
-            padding=True,
-            return_tensors=None  # 移除return_tensors参数
+            padding='max_length',
+            return_tensors=None
         )
         
         model_inputs['labels'] = labels['input_ids']
