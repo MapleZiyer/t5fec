@@ -72,7 +72,7 @@ def main():
 
     # 加载数据集
     dataset = load_dataset(
-        'json',
+        'jsonl',
         data_files={'train': '../data/gold_negate_8-shot_2-retrieved-evidence_train_gpt-3.5-turbo.jsonl'}
     )
 
@@ -91,6 +91,7 @@ Corrected statement: """
         print(f"\n\n{inputs}\n\n")
         targets = examples['original']
         print(f"\n\n{targets}\n\n")
+
         model_inputs = tokenizer(
             inputs,
             max_length=4096,
