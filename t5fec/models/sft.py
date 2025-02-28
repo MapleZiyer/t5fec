@@ -51,8 +51,17 @@ def main():
 
     # 数据预处理函数
     def preprocess_function(examples):
+        # 定义prompt引导生成
+        prompt = """You are an expert in correcting erroneous sentences. Based on the following evidence, identify and correct errors in the original statement. Ensure that the corrected statement maintains the same meaning and structure as the original, only changing the parts that are incorrect.
+
+Evidence: {evidence}
+
+Original statement: {original_statement}
+
+Corrected statement: """
+
         # 将mutated和gold_evidence组合作为输入
-        inputs = [f"Claim: {m}\nEvidence: {e}" for m, e in zip(examples['mutated'], examples['gold_evidence'])]
+        inputs = [prompt.format(evidence=e, original_statement=m) for m, e in zip(examples['mutated'], examples['gold_evidence'])]
         targets = examples['original']
         
         # 对输入文本进行编码
