@@ -42,7 +42,7 @@ def main():
         save_total_limit=2,
         do_train=True,
         remove_unused_columns=True,
-        report_to=["wandb"] if os.environ.get("WANDB_DISABLED") != "true" else [],  # wandb日志配置
+        report_to=["wandb"],  # wandb日志配置
         run_name="flan-t5-large-sft-run",  # 设置wandb运行名称
     )
 
@@ -79,41 +79,34 @@ def main():
     # 数据预处理函数
     def preprocess_function(examples):
         prompt = """You are an expert in correcting erroneous sentences. Based on the following evidence, identify and correct errors in the original statement. Ensure that the corrected statement maintains the same meaning and structure as the original, only changing the parts that are incorrect.
-    
-        Evidence: {evidence}
-    
-        Original statement: {original_statement}
-    
-        Corrected statement: """
-    
+
+Evidence: {evidence}
+
+Original statement: {original_statement}
+
+Corrected statement: """
+
         inputs = [prompt.format(evidence=e, original_statement=m) 
                  for m, e in zip(examples['mutated'], examples['gold_evidence'])]
         targets = examples['original']
         
-        # 统一设置tokenizer的参数
-        tokenizer_kwargs = {
-            'padding': True,
-            'truncation': True,
-            'return_tensors': None,  # 让collate_fn处理张量转换
-        }
-        
-        # 处理输入文本
         model_inputs = tokenizer(
             inputs,
             max_length=4096,
-            **tokenizer_kwargs
+            truncation=True,
+            padding='max_length',  # Ensure padding to max_length
+            return_tensors='pt'  # Ensure tensors are returned
         )
         
-        # 处理目标文本
         labels = tokenizer(
             targets,
             max_length=256,
-            **tokenizer_kwargs
+            truncation=True,
+            padding='max_length',  # Ensure padding to max_length
+            return_tensors='pt'  # Ensure tensors are returned
         )
         
-        # 确保labels是列表格式
         model_inputs['labels'] = labels['input_ids']
-            
         return model_inputs
 
     # 处理数据集
