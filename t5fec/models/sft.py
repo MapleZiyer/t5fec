@@ -113,20 +113,17 @@ Corrected statement: """
         desc="Processing dataset",
     )
 
-    # 模型初始化参数
+    # 设置模型参数
     torch_dtype = torch.bfloat16 if training_args.bf16 else torch.float32
-    model_kwargs = dict(
-        torch_dtype=torch_dtype,
-        use_cache=False if training_args.gradient_checkpointing else True
-    )
+    model = model.to(dtype=torch_dtype)
+    model.config.use_cache = False if training_args.gradient_checkpointing else True
 
     # 初始化SFT训练器
     trainer = SFTTrainer(
         model=model,
         args=training_args,
         train_dataset=processed_dataset,
-        tokenizer=tokenizer,
-        **model_kwargs
+        tokenizer=tokenizer
     )
 
     # 开始训练
