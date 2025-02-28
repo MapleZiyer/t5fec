@@ -126,7 +126,6 @@ Corrected statement: """
         args=training_args,
         train_dataset=processed_dataset,
         tokenizer=tokenizer,
-        peft_config=get_peft_config(None),  # 如需使用PEFT，可以在这里配置
         **model_kwargs
     )
 
