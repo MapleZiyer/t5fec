@@ -51,10 +51,28 @@ def main():
 
     # 数据预处理函数
     def preprocess_function(examples):
-        inputs = examples['input']
-        targets = examples['output']
-        model_inputs = tokenizer(inputs, max_length=512, truncation=True, padding=True)
-        labels = tokenizer(targets, max_length=128, truncation=True, padding=True)
+        # 将mutated和gold_evidence组合作为输入
+        inputs = [f"Claim: {m}\nEvidence: {e}" for m, e in zip(examples['mutated'], examples['gold_evidence'])]
+        targets = examples['original']
+        
+        # 对输入文本进行编码
+        model_inputs = tokenizer(
+            inputs,
+            max_length=3000,  # 增加最大长度以容纳更长的输入
+            truncation=True,
+            padding='max_length',
+            return_tensors='pt'
+        )
+        
+        # 对目标文本进行编码
+        labels = tokenizer(
+            targets,
+            max_length=256,  # 增加最大长度以容纳更长的输出
+            truncation=True,
+            padding='max_length',
+            return_tensors='pt'
+        )
+        
         model_inputs['labels'] = labels['input_ids']
         return model_inputs
 
