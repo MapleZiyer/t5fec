@@ -57,7 +57,7 @@ def main():
         logger.info(f"Checkpoint detected, resuming training at {last_checkpoint}.")
 
     # 设置日志级别
-    log_level = training_args.get_process_log_level()
+    log_level = logging.INFO
     logger.setLevel(log_level)
     datasets.utils.logging.set_verbosity(log_level)
     transformers.utils.logging.set_verbosity(log_level)
