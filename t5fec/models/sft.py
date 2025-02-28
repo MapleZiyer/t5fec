@@ -1,15 +1,21 @@
+import logging
 import os
 import sys
-import logging
+
+import datasets
 import torch
-from transformers import (
-    AutoModelForSeq2SeqLM,
-    AutoTokenizer,
-    Seq2SeqTrainingArguments,
-    Seq2SeqTrainer,
-    set_seed
-)
+import transformers
 from datasets import load_dataset
+from transformers import set_seed
+from transformers.trainer_utils import get_last_checkpoint
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
+from trl import (
+    SFTTrainer,
+    get_kbit_device_map,
+    get_peft_config,
+    get_quantization_config,
+)
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -20,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     # 训练参数设置
-    training_args = Seq2SeqTrainingArguments(
+    training_args = transformers.TrainingArguments(
         output_dir="../checkpoints/flan-t5-large-sft",
         learning_rate=2e-5,
         num_train_epochs=5,
@@ -30,18 +36,36 @@ def main():
         bf16=True,
         logging_steps=10,
         save_strategy="epoch",
-        eval_strategy="no",
+        evaluation_strategy="no",
         save_total_limit=2,
         do_train=True,
         remove_unused_columns=True,
+        report_to=["wandb"],  # 添加wandb日志
     )
 
     # 设置随机种子
     set_seed(42)
 
+    # 检查最新的checkpoint
+    last_checkpoint = None
+    if os.path.isdir(training_args.output_dir):
+        last_checkpoint = get_last_checkpoint(training_args.output_dir)
+    if last_checkpoint is not None:
+        logger.info(f"Checkpoint detected, resuming training at {last_checkpoint}.")
+
+    # 设置日志级别
+    log_level = training_args.get_process_log_level()
+    logger.setLevel(log_level)
+    datasets.utils.logging.set_verbosity(log_level)
+    transformers.utils.logging.set_verbosity(log_level)
+    transformers.utils.logging.enable_default_handler()
+    transformers.utils.logging.enable_explicit_format()
+
     # 加载模型和分词器
-    model = AutoModelForSeq2SeqLM.from_pretrained("google/flan-t5-large")
-    tokenizer = AutoTokenizer.from_pretrained("google/flan-t5-large")
+    model_name = "google/flan-t5-large"
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer.pad_token = tokenizer.eos_token
 
     # 加载数据集
     dataset = load_dataset(
@@ -51,7 +75,6 @@ def main():
 
     # 数据预处理函数
     def preprocess_function(examples):
-        # 定义prompt引导生成
         prompt = """You are an expert in correcting erroneous sentences. Based on the following evidence, identify and correct errors in the original statement. Ensure that the corrected statement maintains the same meaning and structure as the original, only changing the parts that are incorrect.
 
 Evidence: {evidence}
@@ -60,23 +83,21 @@ Original statement: {original_statement}
 
 Corrected statement: """
 
-        # 将mutated和gold_evidence组合作为输入
-        inputs = [prompt.format(evidence=e, original_statement=m) for m, e in zip(examples['mutated'], examples['gold_evidence'])]
+        inputs = [prompt.format(evidence=e, original_statement=m) 
+                 for m, e in zip(examples['mutated'], examples['gold_evidence'])]
         targets = examples['original']
         
-        # 对输入文本进行编码
         model_inputs = tokenizer(
             inputs,
-            max_length=4096,  # 增加最大长度以容纳更长的输入
+            max_length=4096,
             truncation=True,
             padding='max_length',
             return_tensors='pt'
         )
         
-        # 对目标文本进行编码
         labels = tokenizer(
             targets,
-            max_length=256,  # 增加最大长度以容纳更长的输出
+            max_length=256,
             truncation=True,
             padding='max_length',
             return_tensors='pt'
@@ -92,21 +113,41 @@ Corrected statement: """
         desc="Processing dataset",
     )
 
-    # 初始化训练器
-    trainer = Seq2SeqTrainer(
+    # 模型初始化参数
+    torch_dtype = torch.bfloat16 if training_args.bf16 else torch.float32
+    model_kwargs = dict(
+        torch_dtype=torch_dtype,
+        use_cache=False if training_args.gradient_checkpointing else True,
+        device_map=get_kbit_device_map() if get_quantization_config(None) is not None else None,
+    )
+
+    # 初始化SFT训练器
+    trainer = SFTTrainer(
         model=model,
         args=training_args,
         train_dataset=processed_dataset,
         tokenizer=tokenizer,
+        peft_config=get_peft_config(None),  # 如需使用PEFT，可以在这里配置
+        **model_kwargs
     )
 
     # 开始训练
     logger.info("*** Starting training ***")
-    trainer.train()
+    train_result = trainer.train(resume_from_checkpoint=last_checkpoint)
+    metrics = train_result.metrics
+    metrics["train_samples"] = len(processed_dataset)
+    trainer.log_metrics("train", metrics)
+    trainer.save_metrics("train", metrics)
+    trainer.save_state()
 
     # 保存模型
-    trainer.save_model()
+    logger.info("*** Saving model ***")
+    trainer.save_model(training_args.output_dir)
     logger.info(f"Model saved to {training_args.output_dir}")
+
+    # 恢复k,v cache用于快速推理
+    trainer.model.config.use_cache = True
+    trainer.model.config.save_pretrained(training_args.output_dir)
 
 if __name__ == "__main__":
     main()
