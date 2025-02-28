@@ -94,17 +94,23 @@ Corrected statement: """
             inputs,
             max_length=4096,
             truncation=True,
-            padding=True  # 修改padding策略
+            padding=True
         )
         
+        # 确保labels的input_ids是列表类型
         labels = tokenizer(
             targets,
             max_length=256,
             truncation=True,
-            padding=True  # 修改padding策略
+            padding=True
         )
         
-        model_inputs['labels'] = labels['input_ids']
+        # 确保数据类型正确
+        if isinstance(labels['input_ids'], list):
+            model_inputs['labels'] = labels['input_ids']
+        else:
+            model_inputs['labels'] = labels['input_ids'].tolist()
+            
         return model_inputs
 
     # 处理数据集
