@@ -79,36 +79,34 @@ def main():
     # 数据预处理函数
     def preprocess_function(examples):
         prompt = """You are an expert in correcting erroneous sentences. Based on the following evidence, identify and correct errors in the original statement. Ensure that the corrected statement maintains the same meaning and structure as the original, only changing the parts that are incorrect.
-
-Evidence: {evidence}
-
-Original statement: {original_statement}
-
-Corrected statement: """
-
+    
+        Evidence: {evidence}
+    
+        Original statement: {original_statement}
+    
+        Corrected statement: """
+    
         inputs = prompt.format(evidence=examples['gold_evidence'], original_statement=examples['mutated'])
-        print(f"\n\n{inputs}\n\n")
         targets = examples['original']
-        print(f"\n\n{targets}\n\n")
-
+    
         model_inputs = tokenizer(
             inputs,
             max_length=4096,
             truncation=True,
-            padding='max_length',  # Ensure padding
-            return_tensors='pt'  # Ensure tensors are returned
+            padding=True,
+            return_tensors=None  # 移除return_tensors参数
         )
         
         labels = tokenizer(
             targets,
-            max_length=4096,
+            max_length=256,
             truncation=True,
-            padding='max_length',  # Ensure padding
-            return_tensors='pt'  # Ensure tensors are returned
+            padding=True,
+            return_tensors=None  # 移除return_tensors参数
         )
         
         model_inputs['labels'] = labels['input_ids']
-
+    
         return model_inputs
 
     # 处理数据集
