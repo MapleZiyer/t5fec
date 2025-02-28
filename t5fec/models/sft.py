@@ -88,8 +88,9 @@ Corrected statement: """
 
         inputs = [prompt.format(evidence=e, original_statement=m) 
                  for m, e in zip(examples['mutated'], examples['gold_evidence'])]
+        print(f"\n\n{inputs}\n\n")
         targets = examples['original']
-        
+        print(f"\n\n{targets}\n\n")
         model_inputs = tokenizer(
             inputs,
             max_length=4096,
