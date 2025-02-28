@@ -94,15 +94,15 @@ Corrected statement: """
             inputs,
             max_length=4096,
             truncation=True,
-            padding=True,  # Ensure padding
+            padding='max_length',  # Ensure padding
             return_tensors='pt'  # Ensure tensors are returned
         )
         
         labels = tokenizer(
             targets,
-            max_length=256,
+            max_length=4096,
             truncation=True,
-            padding=True,  # Ensure padding
+            padding='max_length',  # Ensure padding
             return_tensors='pt'  # Ensure tensors are returned
         )
         
