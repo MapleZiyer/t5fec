@@ -88,6 +88,9 @@ def main():
     
         inputs = prompt.format(evidence=examples['gold_evidence'], original_statement=examples['mutated'])
         targets = examples['original']
+
+        print(f"\n\n{inputs}")
+        print(f"\n\n{targets}\n\n")
     
         model_inputs = tokenizer(
             inputs,
@@ -99,7 +102,7 @@ def main():
         
         labels = tokenizer(
             targets,
-            max_length=4096,
+            max_length=256,
             truncation=True,
             padding='max_length',
             return_tensors=None
