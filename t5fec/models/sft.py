@@ -94,14 +94,16 @@ Corrected statement: """
             inputs,
             max_length=4096,
             truncation=True,
-            padding='max_length'
+            padding=True,
+            return_tensors=None
         )
         
         labels = tokenizer(
             targets,
             max_length=256,
             truncation=True,
-            padding='max_length'
+            padding=True,
+            return_tensors=None
         )
         
         model_inputs['labels'] = labels['input_ids']
