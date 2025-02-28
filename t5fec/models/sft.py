@@ -42,7 +42,7 @@ def main():
         save_total_limit=2,
         do_train=True,
         remove_unused_columns=True,
-        report_to=["wandb"] if os.environ.get("WANDB_DISABLED") != "true" else [],  # wandb日志配置
+        report_to=["wandb"],  # wandb日志配置
         run_name="flan-t5-large-sft-run",  # 设置wandb运行名称
     )
 
@@ -94,16 +94,16 @@ Corrected statement: """
             inputs,
             max_length=4096,
             truncation=True,
-            padding='max_length',
-            return_tensors=None
+            padding='max_length',  # Ensure padding to max_length
+            return_tensors='pt'  # Ensure tensors are returned
         )
         
         labels = tokenizer(
             targets,
             max_length=256,
             truncation=True,
-            padding='max_length',
-            return_tensors=None
+            padding='max_length',  # Ensure padding to max_length
+            return_tensors='pt'  # Ensure tensors are returned
         )
         
         model_inputs['labels'] = labels['input_ids']
