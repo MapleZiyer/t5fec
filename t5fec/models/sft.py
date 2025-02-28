@@ -72,7 +72,7 @@ def main():
 
     # 加载数据集
     dataset = load_dataset(
-        'jsonl',
+        'json',
         data_files={'train': '../data/gold_negate_8-shot_2-retrieved-evidence_train_gpt-3.5-turbo.jsonl'}
     )
 
@@ -86,8 +86,7 @@ Original statement: {original_statement}
 
 Corrected statement: """
 
-        inputs = [prompt.format(evidence=e, original_statement=m) 
-                 for m, e in zip(examples['mutated'], examples['gold_evidence'])]
+        inputs = prompt.format(evidence=examples['gold_evidence'], original_statement=examples['mutated'])
         print(f"\n\n{inputs}\n\n")
         targets = examples['original']
         print(f"\n\n{targets}\n\n")
@@ -109,10 +108,6 @@ Corrected statement: """
         )
         
         model_inputs['labels'] = labels['input_ids']
-        
-        # Ensure labels and inputs are flattened and correct
-        model_inputs['input_ids'] = model_inputs['input_ids'].squeeze(0)  # Remove extra dimensions
-        model_inputs['labels'] = model_inputs['labels'].squeeze(0)  # Remove extra dimensions
 
         return model_inputs
 
