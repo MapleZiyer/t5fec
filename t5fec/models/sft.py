@@ -42,10 +42,8 @@ def main():
         save_total_limit=2,
         do_train=True,
         remove_unused_columns=True,
-        report_to=["wandb"],  # 添加wandb日志
+        report_to=["wandb"] if os.environ.get("WANDB_DISABLED") != "true" else [],  # wandb日志配置
         run_name="flan-t5-large-sft-run",  # 设置wandb运行名称
-        # wandb相关配置
-        report_to=["wandb"] if os.environ.get("WANDB_DISABLED") != "true" else [],
     )
 
     # 设置随机种子
