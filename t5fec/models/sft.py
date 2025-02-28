@@ -31,7 +31,7 @@ def main():
     training_args = transformers.TrainingArguments(
         output_dir="../checkpoints/flan-t5-large-sft",
         learning_rate=2e-5,
-        num_train_epochs=5,
+        num_train_epochs=1,
         per_device_train_batch_size=8,
         gradient_accumulation_steps=4,
         gradient_checkpointing=True,
@@ -89,8 +89,8 @@ def main():
         inputs = prompt.format(evidence=examples['gold_evidence'], original_statement=examples['mutated'])
         targets = examples['original']
 
-        print(f"\n\n{inputs}")
-        print(f"\n\n{targets}\n\n")
+        logger.info(f"\n\n{inputs}")
+        logger.info(f"\n\n{targets}\n\n")
     
         model_inputs = tokenizer(
             inputs,
