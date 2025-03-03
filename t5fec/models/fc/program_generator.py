@@ -1,5 +1,5 @@
-from t5fec.models.fc.prompts import Prompt_Loader
-from t5fec.models.fc.utils import OpenAIModel
+from fc.prompts import Prompt_Loader
+from fc.utils import OpenAIModel
 
 class Reasoning_Program_Generator:
     def __init__(self):

@@ -3,7 +3,7 @@ from transformers import T5Tokenizer, T5ForConditionalGeneration
 import random
 from tqdm import tqdm
 import re
-from t5fec.models.fc.question_answering import T5_Question_Answering
+from fc.question_answering import T5_Question_Answering
 #from ProgramFC.models.retriever import PyseriniRetriever
 
 def parse_args():
