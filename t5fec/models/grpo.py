@@ -55,6 +55,9 @@ def main():
         report_to=["wandb"],
         run_name="flan-t5-large-grpo-run"
     )
+    # 添加reward_weights参数
+    setattr(training_args, 'reward_weights', [1.0])
+    setattr(training_args, 'reward_scale', 1.0)
     # 添加 model_init_kwargs 参数（这里先设为空字典）
     setattr(training_args, 'model_init_kwargs', {})
 
