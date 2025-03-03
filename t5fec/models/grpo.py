@@ -39,7 +39,13 @@ class GRPOScriptArguments:
 
 def main():
     # 训练参数设置
-    training_args = transformers.TrainingArguments(
+    # 创建一个自定义的TrainingArguments类来包含model_init_kwargs
+    class CustomTrainingArguments(transformers.TrainingArguments):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.model_init_kwargs = {}
+
+    training_args = CustomTrainingArguments(
         output_dir="../checkpoints/flan-t5-large-grpo",
         learning_rate=2e-5,
         num_train_epochs=1,
@@ -54,7 +60,7 @@ def main():
         do_train=True,
         remove_unused_columns=True,
         report_to=["wandb"],
-        run_name="flan-t5-large-grpo-run",
+        run_name="flan-t5-large-grpo-run"
     )
 
     # 设置随机种子
