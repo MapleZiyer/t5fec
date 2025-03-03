@@ -17,8 +17,8 @@ import wandb
 from sentence_transformers import SentenceTransformer
 
 
-from t5fec.models.fc.program_generator import Reasoning_Program_Generator
-from t5fec.models.fc.program_execution import Program_Execution
+from fc.program_generator import Reasoning_Program_Generator
+from fc.program_execution import Program_Execution
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
