@@ -68,6 +68,8 @@ def main():
     setattr(training_args, 'num_generations', 3)  # 设置每个样本生成4个候选答案
     # 添加 use_vllm 参数
     setattr(training_args, 'use_vllm', False)
+    # 添加 beta 参数
+    setattr(training_args, 'beta', 0.1)
 
     # 设置随机种子
     set_seed(42)
