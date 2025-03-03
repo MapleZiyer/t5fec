@@ -70,6 +70,8 @@ def main():
     setattr(training_args, 'use_vllm', False)
     # 添加 beta 参数
     setattr(training_args, 'beta', 0.1)
+    # 添加 log_completions 参数
+    setattr(training_args, 'log_completions', False)
 
     # 设置随机种子
     set_seed(42)
