@@ -59,6 +59,7 @@ def main():
     # 添加model_init_kwargs参数
     setattr(training_args, 'model_init_kwargs', {})
 
+
     # 设置随机种子
     set_seed(42)
 
