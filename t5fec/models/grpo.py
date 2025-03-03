@@ -178,11 +178,11 @@ def main():
 
     # 初始化GRPO训练器
     trainer = GRPOTrainer(
-        model=model_name,
+        model=model,
         reward_funcs=reward_funcs,
         args=training_args,
         train_dataset=processed_dataset,
-        processing_class=tokenizer,
+        tokenizer=tokenizer,
     )
 
     # 开始训练
