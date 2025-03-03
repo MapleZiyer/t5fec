@@ -14,6 +14,12 @@ from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 from trl import GRPOTrainer, get_peft_config
 import wandb
 
+from sentence_transformers import SentenceTransformer
+
+
+from t5fec.models.fc.program_generator import Reasoning_Program_Generator
+from t5fec.models.fc.program_execution import Program_Execution
+
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
@@ -122,17 +128,48 @@ def main():
     model = model.to(dtype=torch_dtype)
     model.config.use_cache = False if training_args.gradient_checkpointing else True
 
+    # 初始化事实验证模块
+    program_generator = Reasoning_Program_Generator()
+    program_executor = Program_Execution()
+    
     # 定义奖励函数
+    # 初始化sentence transformer模型
+    similarity_model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+    
     def accuracy_reward(outputs, batch):
-        return torch.ones(len(outputs)) * 0.5
+        rewards = []
+        for output, sample in zip(outputs, batch):
+            # 使用sentence transformer计算文本相似度作为奖励
+            output_embedding = similarity_model.encode(output, convert_to_tensor=True)
+            target_embedding = similarity_model.encode(sample['claim'], convert_to_tensor=True)
+            similarity = float(torch.nn.functional.cosine_similarity(output_embedding, target_embedding, dim=0))
+            print(f"\nOutput:{output}\nSimilarity{similarity}\n")
+            if similarity < 0.7:
+                rewards.append(0.0)
+                continue
 
-    def format_reward(outputs, batch):
-        return torch.ones(len(outputs)) * 0.3
+            # 使用事实验证模块评估生成文本
+            programs = program_generator.generate_program(output)
+            # 执行推理程序
+            sample = [{
+                    "idx":0,
+                    "id":batch['id'],
+                    "claim":output,
+                    "gold":"",
+                    "predicted_programs":programs,
+                    "evidence":batch['evidence']
+                }]
+            prediction = program_executor.execute_on_dataset(sample)
+            print(f"\nPrograms:{programs}\nPrediction:{prediction}\n")
+            # 如果预测结果为True，说明生成的文本与证据一致
+            if prediction:
+                rewards.append(1.0)
+            else:
+                rewards.append(0.0)
+            
+        return torch.tensor(rewards)
 
-    def tag_count_reward(outputs, batch):
-        return torch.ones(len(outputs)) * 0.2
-
-    reward_funcs = [accuracy_reward, format_reward, tag_count_reward]
+    reward_funcs = [accuracy_reward]
 
     # 初始化GRPO训练器
     trainer = GRPOTrainer(
