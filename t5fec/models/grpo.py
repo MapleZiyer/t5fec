@@ -35,34 +35,6 @@ class GRPOScriptArguments:
             "help": "List of reward functions. Possible values: 'accuracy', 'format', 'tag_count'"
         },
     )
-    cosine_min_value_wrong: float = field(
-        default=0.0,
-        metadata={"help": "Minimum reward for wrong answers"},
-    )
-    cosine_max_value_wrong: float = field(
-        default=-0.5,
-        metadata={"help": "Maximum reward for wrong answers"},
-    )
-    cosine_min_value_correct: float = field(
-        default=0.5,
-        metadata={"help": "Minimum reward for correct answers"},
-    )
-    cosine_max_value_correct: float = field(
-        default=1.0,
-        metadata={"help": "Maximum reward for correct answers"},
-    )
-    cosine_max_len: int = field(
-        default=1000,
-        metadata={"help": "Maximum length for scaling"},
-    )
-    repetition_n_grams: int = field(
-        default=3,
-        metadata={"help": "Number of n-grams for repetition penalty reward"},
-    )
-    repetition_max_penalty: float = field(
-        default=-1.0,
-        metadata={"help": "Maximum (negative) penalty for for repetition penalty reward"},
-    )
 
 def main():
     # 训练参数设置
@@ -84,22 +56,14 @@ def main():
         run_name="flan-t5-large-grpo-run"
     )
     # 添加reward_weights参数
-    setattr(training_args, 'reward_weights', [1.0] * len(reward_funcs))
+    setattr(training_args, 'reward_weights', [1.0])
     setattr(training_args, 'reward_scale', 1.0)
-    # 添加 model_init_kwargs 参数
-    torch_dtype = torch.bfloat16 if training_args.bf16 else torch.float32
-    model_kwargs = dict(
-        trust_remote_code=True,
-        torch_dtype=torch_dtype,
-        use_cache=False if training_args.gradient_checkpointing else True,
-    )
-    setattr(training_args, 'model_init_kwargs', model_kwargs)
+    # 添加 model_init_kwargs 参数（这里先设为空字典）
+    setattr(training_args, 'model_init_kwargs', {})
     # 添加 max_prompt_length 参数
     setattr(training_args, 'max_prompt_length', 4096)
     # 添加 max_completion_length 参数
     setattr(training_args, 'max_completion_length', 256)
-    # 添加 system_prompt 参数
-    setattr(training_args, 'system_prompt', None)
 
     # 设置随机种子
     set_seed(42)
