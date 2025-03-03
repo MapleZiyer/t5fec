@@ -39,13 +39,7 @@ class GRPOScriptArguments:
 
 def main():
     # 训练参数设置
-    # 创建一个自定义的TrainingArguments类来包含model_init_kwargs
-    class CustomTrainingArguments(transformers.TrainingArguments):
-        def __init__(self, *args, **kwargs):
-            super().__init__(*args, **kwargs)
-            self.model_init_kwargs = {}
-
-    training_args = CustomTrainingArguments(
+    training_args = transformers.TrainingArguments(
         output_dir="../checkpoints/flan-t5-large-grpo",
         learning_rate=2e-5,
         num_train_epochs=1,
