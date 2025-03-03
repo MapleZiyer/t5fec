@@ -56,6 +56,8 @@ def main():
         report_to=["wandb"],
         run_name="flan-t5-large-grpo-run"
     )
+    # 添加model_init_kwargs参数
+    setattr(training_args, 'model_init_kwargs', {})
 
     # 设置随机种子
     set_seed(42)
