@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from dataclasses import dataclass, field
 
 import datasets
 import torch
@@ -10,14 +11,8 @@ from transformers import set_seed
 from transformers.trainer_utils import get_last_checkpoint
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
-from trl import (
-    SFTTrainer,
-    get_kbit_device_map,
-    get_peft_config,
-    get_quantization_config,
-)
-
-import wandb  # 添加 wandb 导入
+from trl import GRPOTrainer, get_peft_config
+import wandb
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -26,10 +21,20 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+@dataclass
+class GRPOScriptArguments:
+    """Script arguments for the GRPO training script."""
+    reward_funcs: list[str] = field(
+        default_factory=lambda: ["accuracy", "format", "tag_count"],
+        metadata={
+            "help": "List of reward functions. Possible values: 'accuracy', 'format', 'tag_count'"
+        },
+    )
+
 def main():
     # 训练参数设置
     training_args = transformers.TrainingArguments(
-        output_dir="../checkpoints/flan-t5-large-sft",
+        output_dir="../checkpoints/flan-t5-large-grpo",
         learning_rate=2e-5,
         num_train_epochs=1,
         per_device_train_batch_size=8,
@@ -42,8 +47,8 @@ def main():
         save_total_limit=2,
         do_train=True,
         remove_unused_columns=True,
-        report_to=["wandb"],  # wandb日志配置
-        run_name="flan-t5-large-sft-run",  # 设置wandb运行名称
+        report_to=["wandb"],
+        run_name="flan-t5-large-grpo-run",
     )
 
     # 设置随机种子
@@ -66,29 +71,36 @@ def main():
 
     # 加载模型和分词器
     model_name = "google/flan-t5-large"
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+    if last_checkpoint is not None:
+        logger.info(f"Loading model from checkpoint: {last_checkpoint}")
+        model = AutoModelForSeq2SeqLM.from_pretrained(last_checkpoint)
+    else:
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokenizer.pad_token = tokenizer.eos_token
 
-    # 加载数据集
+    # 加载数据集并过滤
     dataset = load_dataset(
         'json',
-        data_files={'train': '../data/gold_negate_8-shot_2-retrieved-evidence_train_gpt-3.5-turbo.jsonl'}
+        data_files={'train': '../data/train.json'}
     )
+    
+    # 只保留label为refutes的数据
+    dataset = dataset.filter(lambda x: x['label'] == 'refutes')
 
     # 数据预处理函数
     def preprocess_function(examples):
         prompt = """You are an expert in correcting erroneous sentences. Based on the following evidence, identify and correct errors in the original statement. Ensure that the corrected statement maintains the same meaning and structure as the original, only changing the parts that are incorrect.
-    
+
         Evidence: {evidence}
-    
+
         Original statement: {original_statement}
-    
+
         Corrected statement: """
-    
-        inputs = prompt.format(evidence=examples['gold_evidence'], original_statement=examples['mutated'])
-        targets = examples['original']
-    
+
+        inputs = prompt.format(evidence=examples['evidence'], original_statement=examples['claim'])
+
         model_inputs = tokenizer(
             inputs,
             max_length=4096,
@@ -97,23 +109,12 @@ def main():
             return_tensors=None
         )
         
-        labels = tokenizer(
-            targets,
-            max_length=256,
-            truncation=True,
-            padding='max_length',
-            return_tensors=None
-        )
-        
-        model_inputs['labels'] = labels['input_ids']
-    
         return model_inputs
 
     # 处理数据集
-    processed_dataset = dataset['train'].map(
-        preprocess_function,
-        remove_columns=dataset['train'].column_names,
-        desc="Processing dataset",
+    processed_dataset = dataset.map(
+    preprocess_function,
+    desc="Processing dataset",
     )
 
     # 设置模型参数
@@ -121,19 +122,33 @@ def main():
     model = model.to(dtype=torch_dtype)
     model.config.use_cache = False if training_args.gradient_checkpointing else True
 
-    # 初始化SFT训练器
-    trainer = SFTTrainer(
+    # 定义奖励函数
+    def accuracy_reward(outputs, batch):
+        return torch.ones(len(outputs)) * 0.5
+
+    def format_reward(outputs, batch):
+        return torch.ones(len(outputs)) * 0.3
+
+    def tag_count_reward(outputs, batch):
+        return torch.ones(len(outputs)) * 0.2
+
+    reward_funcs = [accuracy_reward, format_reward, tag_count_reward]
+
+    # 初始化GRPO训练器
+    trainer = GRPOTrainer(
         model=model,
+        reward_funcs=reward_funcs,
         args=training_args,
         train_dataset=processed_dataset,
-        tokenizer=tokenizer
+        processing_class=tokenizer,
     )
 
     # 开始训练
     logger.info("*** Starting training ***")
-    # 启动wandb日志记录
-    wandb.init(project="t5fec-sft", name=training_args.run_name)  # 在wandb上创建一个项目和运行
-    train_result = trainer.train(resume_from_checkpoint=last_checkpoint)
+    wandb.init(project="t5fec-grpo", name=training_args.run_name)
+    
+    train_result = trainer.train(resume_from_checkpoint=last_checkpoint if last_checkpoint else None)
+    
     metrics = train_result.metrics
     metrics["train_samples"] = len(processed_dataset)
     trainer.log_metrics("train", metrics)
@@ -146,11 +161,11 @@ def main():
     logger.info(f"Model saved to {training_args.output_dir}")
 
     # 恢复k,v cache用于快速推理
-    trainer.model.config.use_cache = True
-    trainer.model.config.save_pretrained(training_args.output_dir)
+    trainer.save_model(training_args.output_dir)
+    tokenizer.save_pretrained(training_args.output_dir)
 
     # 完成wandb日志
-    wandb.finish()  # 完成当前的wandb日志
+    wandb.finish()
 
 if __name__ == "__main__":
     main()
