@@ -60,6 +60,8 @@ def main():
     setattr(training_args, 'reward_scale', 1.0)
     # 添加 model_init_kwargs 参数（这里先设为空字典）
     setattr(training_args, 'model_init_kwargs', {})
+    # 添加 max_prompt_length 参数
+    setattr(training_args, 'max_prompt_length', 4096)
 
     # 设置随机种子
     set_seed(42)
