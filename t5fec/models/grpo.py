@@ -128,8 +128,10 @@ def main():
 
     # 设置模型参数
     torch_dtype = torch.bfloat16 if training_args.bf16 else torch.float32
-    model = model.to(dtype=torch_dtype)
-    model.config.use_cache = False if training_args.gradient_checkpointing else True
+    training_args.model_init_kwargs = {
+        'torch_dtype': torch_dtype,
+        'use_cache': False if training_args.gradient_checkpointing else True
+    }
 
     # 初始化事实验证模块
     program_generator = Reasoning_Program_Generator()
@@ -176,7 +178,7 @@ def main():
 
     # 初始化GRPO训练器
     trainer = GRPOTrainer(
-        model=model,
+        model=model_name,
         reward_funcs=reward_funcs,
         args=training_args,
         train_dataset=processed_dataset,
