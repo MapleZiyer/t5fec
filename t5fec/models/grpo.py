@@ -149,8 +149,8 @@ def main():
             return_tensors=None
         )
 
-        print(f"\nToken 总数: {len(model_inputs["input_ids"])}\n")
-        logging.info(f"\nToken 总数: {len(model_inputs["input_ids"])}\n")
+        print(f"\nToken 总数: {len(model_inputs['input_ids'])}\n")
+        logging.info(f"\nToken 总数: {len(model_inputs['input_ids'])}\n")
 
         # 确保所有必要的字段都存在且维度正确
         if 'input_ids' not in model_inputs or len(model_inputs['input_ids']) == 0:
@@ -159,13 +159,24 @@ def main():
             model_inputs['attention_mask'] = [1] * len(model_inputs['input_ids'])
 
         # 确保输入数据维度正确
-        if isinstance(model_inputs['input_ids'], list) and len(model_inputs['input_ids']) > 0:
-            model_inputs['input_ids'] = torch.tensor(model_inputs['input_ids'])
-        if isinstance(model_inputs['attention_mask'], list) and len(model_inputs['attention_mask']) > 0:
-            model_inputs['attention_mask'] = torch.tensor(model_inputs['attention_mask'])
+        if isinstance(model_inputs['input_ids'], (list, torch.Tensor)):
+            model_inputs['input_ids'] = torch.tensor(model_inputs['input_ids'] if isinstance(model_inputs['input_ids'], list) else model_inputs['input_ids'].tolist())
+            # 添加批次维度
+            if len(model_inputs['input_ids'].shape) == 1:
+                model_inputs['input_ids'] = model_inputs['input_ids'].unsqueeze(0)
+
+        if isinstance(model_inputs['attention_mask'], (list, torch.Tensor)):
+            model_inputs['attention_mask'] = torch.tensor(model_inputs['attention_mask'] if isinstance(model_inputs['attention_mask'], list) else model_inputs['attention_mask'].tolist())
+            # 添加批次维度
+            if len(model_inputs['attention_mask'].shape) == 1:
+                model_inputs['attention_mask'] = model_inputs['attention_mask'].unsqueeze(0)
 
         # 添加prompt字段
         model_inputs['prompt'] = inputs
+
+        # 打印张量维度信息用于调试
+        logger.info(f"Input IDs shape: {model_inputs['input_ids'].shape}")
+        logger.info(f"Attention mask shape: {model_inputs['attention_mask'].shape}")
 
         return model_inputs
 
