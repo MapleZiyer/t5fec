@@ -135,8 +135,6 @@ def main():
     
         Corrected statement: """
         inputs = prompt.format(evidence=examples['evidence'], original_statement=examples['claim'])
-        # 使用更明确的日志格式
-        logger.info("Processing input:\n%s", inputs)
     
         model_inputs = tokenizer(
             inputs,
