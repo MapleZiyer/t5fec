@@ -137,9 +137,6 @@ def main():
         inputs = prompt.format(evidence=examples['evidence'], original_statement=examples['claim'])
         # 使用更明确的日志格式
         logger.info("Processing input:\n%s", inputs)
-        if not inputs.strip():
-            inputs = "No input provided."
-            logger.warning("Empty input detected, using default input")
     
         model_inputs = tokenizer(
             inputs,
@@ -149,27 +146,7 @@ def main():
             return_tensors=None
         )
 
-        print(f"\nToken 总数: {len(model_inputs['input_ids'])}\n")
         logging.info(f"\nToken 总数: {len(model_inputs['input_ids'])}\n")
-
-        # 确保所有必要的字段都存在且维度正确
-        if 'input_ids' not in model_inputs or len(model_inputs['input_ids']) == 0:
-            model_inputs['input_ids'] = tokenizer.encode("Empty input", max_length=4096, padding='max_length', truncation=True)
-        if 'attention_mask' not in model_inputs or len(model_inputs['attention_mask']) == 0:
-            model_inputs['attention_mask'] = [1] * len(model_inputs['input_ids'])
-
-        # 确保输入数据维度正确
-        if isinstance(model_inputs['input_ids'], (list, torch.Tensor)):
-            model_inputs['input_ids'] = torch.tensor(model_inputs['input_ids'] if isinstance(model_inputs['input_ids'], list) else model_inputs['input_ids'].tolist())
-            # 添加批次维度
-            if len(model_inputs['input_ids'].shape) == 1:
-                model_inputs['input_ids'] = model_inputs['input_ids'].unsqueeze(0)
-
-        if isinstance(model_inputs['attention_mask'], (list, torch.Tensor)):
-            model_inputs['attention_mask'] = torch.tensor(model_inputs['attention_mask'] if isinstance(model_inputs['attention_mask'], list) else model_inputs['attention_mask'].tolist())
-            # 添加批次维度
-            if len(model_inputs['attention_mask'].shape) == 1:
-                model_inputs['attention_mask'] = model_inputs['attention_mask'].unsqueeze(0)
 
         # 添加prompt字段
         model_inputs['prompt'] = inputs
@@ -177,6 +154,12 @@ def main():
         # 打印张量维度信息用于调试
         logger.info(f"Input IDs shape: {model_inputs['input_ids'].shape}")
         logger.info(f"Attention mask shape: {model_inputs['attention_mask'].shape}")
+
+        # 确保张量维度大于0
+        if model_inputs['input_ids'].shape[1] == 0:
+            raise ValueError("Input IDs tensor has zero dimension")
+        if model_inputs['attention_mask'].shape[1] == 0:
+            raise ValueError("Attention mask tensor has zero dimension")
 
         return model_inputs
 
