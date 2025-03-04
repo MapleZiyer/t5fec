@@ -140,11 +140,9 @@ def main():
             inputs,
             max_length=512,  # 将最大长度限制在模型支持的范围内
             truncation=True,
-            padding='max_length'  # 修改为max_length以确保所有序列长度一致
+            padding='max_length',  # 修改为max_length以确保所有序列长度一致
+            prompt=inputs
         )
-
-        # 添加prompt字段
-        model_inputs['prompt'] = inputs
 
         return model_inputs
 
