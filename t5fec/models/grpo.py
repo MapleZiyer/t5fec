@@ -146,7 +146,7 @@ def main():
             return_tensors='pt'  # 直接返回PyTorch张量
         )
 
-        logger.info(f"Token总数:{len(model_inputs['input_ids'])}\n", )
+        logger.info(f"Token总数:{len(model_inputs['input_ids'][0])}\n", )
 
         # 添加prompt字段
         model_inputs['prompt'] = inputs
