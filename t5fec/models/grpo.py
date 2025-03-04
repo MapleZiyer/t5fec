@@ -151,15 +151,23 @@ def main():
         # 添加prompt字段
         model_inputs['prompt'] = inputs
 
+        # 将列表转换为张量
+        input_ids = torch.tensor(model_inputs['input_ids'])
+        attention_mask = torch.tensor(model_inputs['attention_mask'])
+
         # 打印张量维度信息用于调试
-        logger.info(f"Input IDs shape: {model_inputs['input_ids'].shape}")
-        logger.info(f"Attention mask shape: {model_inputs['attention_mask'].shape}")
+        logger.info(f"Input IDs shape: {input_ids.shape}")
+        logger.info(f"Attention mask shape: {attention_mask.shape}")
 
         # 确保张量维度大于0
-        if model_inputs['input_ids'].shape[1] == 0:
+        if input_ids.shape[0] == 0:
             raise ValueError("Input IDs tensor has zero dimension")
-        if model_inputs['attention_mask'].shape[1] == 0:
+        if attention_mask.shape[0] == 0:
             raise ValueError("Attention mask tensor has zero dimension")
+
+        # 更新model_inputs中的张量
+        model_inputs['input_ids'] = input_ids
+        model_inputs['attention_mask'] = attention_mask
 
         return model_inputs
 
