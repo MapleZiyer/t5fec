@@ -134,6 +134,10 @@ def main():
         Original statement: {original_statement}
     
         Corrected statement: """
+
+        if not examples['evidence'] or not examples['claim']:
+            return {}  # 直接返回空，避免数据异常    
+        
         inputs = prompt.format(evidence=examples['evidence'], original_statement=examples['claim'])
     
         model_inputs = tokenizer(
@@ -144,6 +148,10 @@ def main():
         )
 
         model_inputs["prompt"] = inputs
+
+        eos_token_id = tokenizer.eos_token_id
+        if model_inputs["input_ids"][:, -1].item() != eos_token_id:
+            model_inputs["input_ids"][:, -1] = eos_token_id  # 强制末尾是 EOS
 
         return model_inputs
 
