@@ -140,16 +140,14 @@ def main():
             inputs,
             max_length=512,  # 将最大长度限制在模型支持的范围内
             truncation=True,
-            padding='max_length',  # 修改为max_length以确保所有序列长度一致
-            return_tensors='pt'  # 修改为'pt'以直接返回PyTorch张量
+            padding='max_length'  # 修改为max_length以确保所有序列长度一致
         )
-
-        logger.info(f"Token总数:{len(model_inputs['input_ids'][0])}", )
-        logger.info(f"input_ids shape: {model_inputs['input_ids'].shape}")
-        logger.info(f"input_ids sample: {model_inputs['input_ids'][0]}")
 
         # 添加prompt字段
         model_inputs['prompt'] = inputs
+
+        logger.info(f"Token总数:{len(model_inputs['input_ids'])}", )
+        logger.info(f"input_ids sample: {model_inputs['input_ids']}")
 
         return model_inputs
 
