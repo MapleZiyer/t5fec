@@ -143,18 +143,12 @@ def main():
             max_length=512,  # 将最大长度限制在模型支持的范围内
             truncation=True,
             padding='max_length',  # 修改为max_length以确保所有序列长度一致
-            return_tensors='pt'  # 修改为'pt'以直接返回PyTorch张量
+            return_tensors=None  # 修改为None，让tokenizer返回原始的token列表
         )
 
-        logger.info(f"Token总数:{len(model_inputs['input_ids'][0])}", )
+        logger.info(f"Token总数:{len(model_inputs['input_ids'])}", )
 
-        # 确保输入数据维度正确
-        if len(model_inputs['input_ids'].shape) == 1:
-            model_inputs['input_ids'] = model_inputs['input_ids'].unsqueeze(0)
-        if len(model_inputs['attention_mask'].shape) == 1:
-            model_inputs['attention_mask'] = model_inputs['attention_mask'].unsqueeze(0)
-
-        # 添加prompt字段
+        # 移除批处理维度检查，因为现在返回的是原始token列表
         model_inputs['prompt'] = inputs
 
         return model_inputs
