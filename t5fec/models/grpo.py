@@ -134,6 +134,8 @@ def main():
             padding='max_length',
             return_tensors=None
         )
+        # 添加prompt字段
+        model_inputs['prompt'] = inputs
 
         return model_inputs
 
