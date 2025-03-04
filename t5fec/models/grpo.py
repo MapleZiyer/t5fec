@@ -148,7 +148,7 @@ def main():
             return_tensors="pt"
         )
 
-        model_inputs["prompt"] = [[inputs]]
+        model_inputs["prompt"] = [inputs]
         logging.info(f"\nModelInputs:{model_inputs}\n")
 
         eos_token_id = tokenizer.eos_token_id
