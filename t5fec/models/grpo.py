@@ -23,8 +23,15 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
     handlers=[logging.StreamHandler(sys.stdout)],
+    level=logging.INFO  # 设置基础日志级别为INFO
 )
 logger = logging.getLogger(__name__)
+
+# 确保其他日志也设置正确的级别
+datasets.utils.logging.set_verbosity(logging.INFO)
+transformers.utils.logging.set_verbosity(logging.INFO)
+transformers.utils.logging.enable_default_handler()
+transformers.utils.logging.enable_explicit_format()
 
 @dataclass
 class GRPOScriptArguments:
@@ -118,19 +125,22 @@ def main():
     dataset = dataset.filter(lambda x: x['label'] == 'refutes')
 
     # 数据预处理函数
+    # 在preprocess_function中使用更明确的日志格式
     def preprocess_function(examples):
         prompt = """You are an expert in correcting erroneous sentences. Based on the following evidence, identify and correct errors in the original statement. Ensure that the corrected statement maintains the same meaning and structure as the original, only changing the parts that are incorrect.
-
+    
         Evidence: {evidence}
-
+    
         Original statement: {original_statement}
-
+    
         Corrected statement: """
         inputs = prompt.format(evidence=examples['evidence'], original_statement=examples['claim'])
-        # 确保输入文本不为空
+        # 使用更明确的日志格式
+        logger.info("Processing input:\n%s", inputs)
         if not inputs.strip():
             inputs = "No input provided."
-
+            logger.warning("Empty input detected, using default input")
+    
         model_inputs = tokenizer(
             inputs,
             max_length=4096,
@@ -139,11 +149,20 @@ def main():
             return_tensors=None
         )
 
+        print(f"\nToken 总数: {model_inputs[1]}\n")
+        logging.info(f"\nToken 总数: {model_inputs[1]}\n")
+
         # 确保所有必要的字段都存在且维度正确
         if 'input_ids' not in model_inputs or len(model_inputs['input_ids']) == 0:
             model_inputs['input_ids'] = tokenizer.encode("Empty input", max_length=4096, padding='max_length', truncation=True)
         if 'attention_mask' not in model_inputs or len(model_inputs['attention_mask']) == 0:
             model_inputs['attention_mask'] = [1] * len(model_inputs['input_ids'])
+
+        # 确保输入数据维度正确
+        if isinstance(model_inputs['input_ids'], list) and len(model_inputs['input_ids']) > 0:
+            model_inputs['input_ids'] = torch.tensor(model_inputs['input_ids'])
+        if isinstance(model_inputs['attention_mask'], list) and len(model_inputs['attention_mask']) > 0:
+            model_inputs['attention_mask'] = torch.tensor(model_inputs['attention_mask'])
 
         # 添加prompt字段
         model_inputs['prompt'] = inputs
