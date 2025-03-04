@@ -54,7 +54,8 @@ def main():
         do_train=True,
         remove_unused_columns=True,
         report_to=["wandb"],
-        run_name="flan-t5-large-grpo-run"
+        run_name="flan-t5-large-grpo-run",
+        remove_unused_columns=False
     )
     # 添加reward_weights参数
     setattr(training_args, 'reward_weights', [1.0])
