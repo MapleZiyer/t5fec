@@ -143,6 +143,8 @@ def main():
             padding='max_length'  # 修改为max_length以确保所有序列长度一致
         )
 
+        model_inputs["prompt"] = inputs
+
         return model_inputs
 
     # 处理数据集
