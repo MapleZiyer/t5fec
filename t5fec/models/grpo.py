@@ -149,8 +149,8 @@ def main():
             return_tensors=None
         )
 
-        print(f"\nToken 总数: {model_inputs[1]}\n")
-        logging.info(f"\nToken 总数: {model_inputs[1]}\n")
+        print(f"\nToken 总数: {len(model_inputs["input_ids"])}\n")
+        logging.info(f"\nToken 总数: {len(model_inputs["input_ids"])}\n")
 
         # 确保所有必要的字段都存在且维度正确
         if 'input_ids' not in model_inputs or len(model_inputs['input_ids']) == 0:
