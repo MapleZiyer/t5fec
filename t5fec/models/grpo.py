@@ -151,6 +151,9 @@ def main():
         # 移除批处理维度检查，因为现在返回的是原始token列表
         model_inputs['prompt'] = inputs
 
+        logger.info(f"input_ids shape: {inputs['input_ids'].shape}")
+        logger.info(f"input_ids sample: {inputs['input_ids'][0]}")  # 只打印一个样本
+
         return model_inputs
 
     # 处理数据集
