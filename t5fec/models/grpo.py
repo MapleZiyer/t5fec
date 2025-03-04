@@ -142,9 +142,9 @@ def main():
     
         model_inputs = tokenizer(
             inputs,
-            max_length=512,  # 将最大长度限制在模型支持的范围内
-            truncation=True,
-            padding='max_length',  # 修改为max_length以确保所有序列长度一致
+            max_length=512,
+            truncation='only_first',
+            padding='max_length',
             return_tensors="pt"
         )
 
