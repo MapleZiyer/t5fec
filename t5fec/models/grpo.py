@@ -134,6 +134,7 @@ def main():
             padding='max_length',
             return_tensors=None
         )
+
         return model_inputs
 
     # 处理数据集
@@ -195,6 +196,7 @@ def main():
         train_dataset=processed_dataset,
         processing_class=tokenizer,
     )
+    training_args.remove_unused_columns = False
 
     # 开始训练
     logger.info("*** Starting training ***")
