@@ -39,7 +39,7 @@ class GRPOScriptArguments:
 def main():
     # 训练参数设置
     training_args = transformers.TrainingArguments(
-        checkpoint_dir="../checkpoints/flan-t5-large-sft"
+        checkpoint_dir="../checkpoints/flan-t5-large-sft",
         output_dir="../checkpoints/flan-t5-large-grpo",
         learning_rate=2e-5,
         num_train_epochs=1,
