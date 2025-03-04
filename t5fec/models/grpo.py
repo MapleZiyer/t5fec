@@ -39,6 +39,7 @@ class GRPOScriptArguments:
 def main():
     # 训练参数设置
     training_args = transformers.TrainingArguments(
+        checkpoint_dir="../checkpoints/flan-t5-large-sft"
         output_dir="../checkpoints/flan-t5-large-grpo",
         learning_rate=2e-5,
         num_train_epochs=1,
@@ -82,8 +83,8 @@ def main():
 
     # 检查最新的 checkpoint
     last_checkpoint = None
-    if os.path.isdir(training_args.output_dir):
-        last_checkpoint = get_last_checkpoint(training_args.output_dir)
+    if os.path.isdir(training_args.checkpoint_dir):
+        last_checkpoint = get_last_checkpoint(training_args.checkpoint_dir)
     if last_checkpoint is not None:
         logger.info(f"Checkpoint detected, resuming training at {last_checkpoint}.")
 
@@ -136,7 +137,7 @@ def main():
         return model_inputs
 
     # 处理数据集
-    processed_dataset = dataset.map(
+    processed_dataset = dataset['train'].map(
         preprocess_function,
         desc="Processing dataset",
     )
