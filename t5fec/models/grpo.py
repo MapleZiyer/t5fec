@@ -140,34 +140,16 @@ def main():
     
         model_inputs = tokenizer(
             inputs,
-            max_length=4096,
+            max_length=512,  # 将最大长度限制在模型支持的范围内
             truncation=True,
-            padding='max_length',
-            return_tensors=None
+            padding=True,
+            return_tensors='pt'  # 直接返回PyTorch张量
         )
 
-        logging.info(f"\nToken 总数: {len(model_inputs['input_ids'])}\n")
+        logger.info(f"Token总数:{len(model_inputs['input_ids'])}\n", )
 
         # 添加prompt字段
         model_inputs['prompt'] = inputs
-
-        # 将列表转换为张量
-        input_ids = torch.tensor(model_inputs['input_ids'])
-        attention_mask = torch.tensor(model_inputs['attention_mask'])
-
-        # 打印张量维度信息用于调试
-        logger.info(f"Input IDs shape: {input_ids.shape}")
-        logger.info(f"Attention mask shape: {attention_mask.shape}")
-
-        # 确保张量维度大于0
-        if input_ids.shape[0] == 0:
-            raise ValueError("Input IDs tensor has zero dimension")
-        if attention_mask.shape[0] == 0:
-            raise ValueError("Attention mask tensor has zero dimension")
-
-        # 更新model_inputs中的张量
-        model_inputs['input_ids'] = input_ids
-        model_inputs['attention_mask'] = attention_mask
 
         return model_inputs
 
