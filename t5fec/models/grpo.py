@@ -144,7 +144,7 @@ def main():
         )
 
         # 添加prompt字段
-        model_inputs['prompt'] = inputs
+        model_inputs['prompt'] = None
 
         logger.info(f"Token总数:{len(model_inputs['input_ids'])}", )
         logger.info(f"input_ids sample: {model_inputs['input_ids']}")
