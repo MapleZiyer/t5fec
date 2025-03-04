@@ -139,7 +139,9 @@ def main():
     # 处理数据集
     processed_dataset = dataset['train'].map(
         preprocess_function,
+        remove_columns=[col for col in dataset['train'].column_names if col not in ['id', 'evidence', 'claim']],  # 保留必要的列
         desc="Processing dataset",
+        keep_in_memory=True  # 保持数据在内存中
     )
 
     # 设置模型参数相关
