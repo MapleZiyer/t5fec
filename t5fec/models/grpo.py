@@ -127,6 +127,10 @@ def main():
 
         Corrected statement: """
         inputs = prompt.format(evidence=examples['evidence'], original_statement=examples['claim'])
+        # 确保输入文本不为空
+        if not inputs.strip():
+            inputs = "No input provided."
+
         model_inputs = tokenizer(
             inputs,
             max_length=4096,
@@ -134,6 +138,13 @@ def main():
             padding='max_length',
             return_tensors=None
         )
+
+        # 确保所有必要的字段都存在且维度正确
+        if 'input_ids' not in model_inputs or len(model_inputs['input_ids']) == 0:
+            model_inputs['input_ids'] = tokenizer.encode("Empty input", max_length=4096, padding='max_length', truncation=True)
+        if 'attention_mask' not in model_inputs or len(model_inputs['attention_mask']) == 0:
+            model_inputs['attention_mask'] = [1] * len(model_inputs['input_ids'])
+
         # 添加prompt字段
         model_inputs['prompt'] = inputs
 
