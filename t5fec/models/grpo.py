@@ -74,6 +74,8 @@ def main():
     setattr(training_args, 'log_completions', False)
     # 添加 temperature 参数
     setattr(training_args, 'temperature', 0.7)
+    # 添加 sync_ref_model 参数
+    setattr(training_args, 'sync_ref_model', True)
 
     # 设置随机种子
     set_seed(42)
