@@ -52,10 +52,9 @@ def main():
         evaluation_strategy="no",
         save_total_limit=2,
         do_train=True,
-        remove_unused_columns=True,
+        remove_unused_columns=False,
         report_to=["wandb"],
         run_name="flan-t5-large-grpo-run",
-        remove_unused_columns=False
     )
     # 添加reward_weights参数
     setattr(training_args, 'reward_weights', [1.0])
@@ -197,7 +196,6 @@ def main():
         train_dataset=processed_dataset,
         processing_class=tokenizer,
     )
-    training_args.remove_unused_columns = False
 
     # 开始训练
     logger.info("*** Starting training ***")
