@@ -69,7 +69,7 @@ def main():
     # 添加 model_init_kwargs 参数（这里先设为空字典）
     setattr(training_args, 'model_init_kwargs', {})
     # 添加 max_prompt_length 参数
-    setattr(training_args, 'max_prompt_length', 4096)
+    setattr(training_args, 'max_prompt_length', 512)
     # 添加 max_completion_length 参数
     setattr(training_args, 'max_completion_length', 256)
     # 添加 num_generations 参数
@@ -144,10 +144,7 @@ def main():
         )
 
         # 添加prompt字段
-        model_inputs['prompt'] = None
-
-        logger.info(f"Token总数:{len(model_inputs['input_ids'])}", )
-        logger.info(f"input_ids sample: {model_inputs['input_ids']}")
+        model_inputs['prompt'] = inputs
 
         return model_inputs
 
