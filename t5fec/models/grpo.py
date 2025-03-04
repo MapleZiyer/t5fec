@@ -145,8 +145,8 @@ def main():
         )
 
         logger.info(f"Token总数:{len(model_inputs['input_ids'][0])}", )
-        logger.info(f"input_ids shape: {inputs['input_ids'].shape}")
-        logger.info(f"input_ids sample: {inputs['input_ids'][0]}")
+        logger.info(f"input_ids shape: {model_inputs['input_ids'].shape}")
+        logger.info(f"input_ids sample: {model_inputs['input_ids'][0]}")
 
         # 添加prompt字段
         model_inputs['prompt'] = inputs
