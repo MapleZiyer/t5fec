@@ -116,6 +116,8 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(model_pretrained_name)
     tokenizer.pad_token = tokenizer.eos_token
 
+    tokenizer.chat_template = {"role": "user", "content": "{content}"}
+
     # 加载数据集并过滤
     dataset = load_dataset(
         'json',
