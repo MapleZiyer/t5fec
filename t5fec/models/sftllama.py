@@ -71,8 +71,7 @@ def main():
     torch_dtype = torch.bfloat16 if training_args.bf16 else torch.float32
     model_kwargs = dict(
         torch_dtype=torch_dtype,
-        use_cache=False if training_args.gradient_checkpointing else True,
-        device_map="auto"
+        use_cache=False if training_args.gradient_checkpointing else True
     )
     
     model = AutoModelForCausalLM.from_pretrained(
