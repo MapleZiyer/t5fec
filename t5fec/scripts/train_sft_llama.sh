@@ -9,7 +9,7 @@ export CUDA_VISIBLE_DEVICES=4
 export WANDB_PROJECT="llamafec-sft"      # 设置wandb项目名称
 export WANDB_ENTITY="maplesakura-tianjin-university"   # 设置wandb用户名
 
-mkdir -p ../checkpoints/llama-2-13b-chat-sft
+mkdir -p ../checkpoints/llama-2-7b-chat-sft
 
 # 打印训练配置信息
 echo "Starting training with following configuration:"

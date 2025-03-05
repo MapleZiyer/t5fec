@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 def main():
     # 训练参数设置
     training_args = transformers.TrainingArguments(
-        output_dir="../checkpoints/llama-2-13b-chat-sft",
+        output_dir="../checkpoints/llama-2-7b-chat-sft",
         learning_rate=2e-5,
         num_train_epochs=1,
         per_device_train_batch_size=4,  # 减小batch size以适应更大的模型
@@ -43,7 +43,7 @@ def main():
         do_train=True,
         remove_unused_columns=True,
         report_to=["wandb"],
-        run_name="llama-2-13b-chat-sft-run",
+        run_name="llama-2-7b-chat-sft-run",
     )
 
     # 设置随机种子
@@ -65,7 +65,7 @@ def main():
     transformers.utils.logging.enable_explicit_format()
 
     # 加载模型和分词器
-    model_name = "meta-llama/Llama-2-13b-chat-hf"
+    model_name = "meta-llama/Llama-2-7b-chat-hf"
     
     # 设置模型加载参数
     torch_dtype = torch.bfloat16 if training_args.bf16 else torch.float32
@@ -138,7 +138,7 @@ def main():
 
     # 开始训练
     logger.info("*** Starting training ***")
-    wandb.init(project="llama-2-13b-chat-sft", name=training_args.run_name)
+    wandb.init(project="llama-2-7b-chat-sft", name=training_args.run_name)
     train_result = trainer.train(resume_from_checkpoint=last_checkpoint)
     metrics = train_result.metrics
     metrics["train_samples"] = len(processed_dataset)
