@@ -148,8 +148,10 @@ def main():
             return_tensors="pt"
         )
 
-        model_inputs["prompt"] = [inputs]
-        logging.info(f"\nModelInputs:{model_inputs}\n")
+        prompt = []
+
+        prompt.append({"role": "user", "content": inputs})
+        model_inputs["prompt"] = prompt
 
         eos_token_id = tokenizer.eos_token_id
         if model_inputs["input_ids"][:, -1].item() != eos_token_id:
