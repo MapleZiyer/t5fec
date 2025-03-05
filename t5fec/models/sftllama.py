@@ -134,8 +134,7 @@ def main():
         model=model,
         args=training_args,
         train_dataset=processed_dataset,
-        tokenizer=tokenizer,
-        packing=False  # 对于Llama模型禁用序列打包
+        tokenizer=tokenizer
     )
 
     # 开始训练
