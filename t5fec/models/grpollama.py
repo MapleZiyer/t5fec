@@ -50,8 +50,8 @@ def main():
         output_dir="../checkpoints/llama-2-7b-chat-grpo",
         learning_rate=2e-5,
         num_train_epochs=1,
-        per_device_train_batch_size=1,  # 减小batch size以降低显存占用
-        gradient_accumulation_steps=32,  # 相应增加梯度累积步数以保持总批次大小
+        per_device_train_batch_size=4,  # 进一步减小batch size以降低显存占用
+        gradient_accumulation_steps=8,  # 相应增加梯度累积步数以保持总批次大小
         gradient_checkpointing=True,
         bf16=True,
         logging_steps=10,
@@ -95,10 +95,10 @@ def main():
 
     # 检查最新的 checkpoint
     last_checkpoint = None
-    #if os.path.isdir(checkpoint_dir):
-        #last_checkpoint = get_last_checkpoint(checkpoint_dir)
-    #if last_checkpoint is not None:
-        #logger.info(f"Checkpoint detected, resuming training at {last_checkpoint}.")
+    if os.path.isdir(checkpoint_dir):
+        last_checkpoint = get_last_checkpoint(checkpoint_dir)
+    if last_checkpoint is not None:
+        logger.info(f"Checkpoint detected, resuming training at {last_checkpoint}.")
 
     
 
