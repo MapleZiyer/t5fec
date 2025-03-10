@@ -7,7 +7,8 @@ trap 'echo "Error occurred at line $LINENO. Command: $BASH_COMMAND"' ERR
 # 设置环境变量
 export CUDA_VISIBLE_DEVICES=4
 export WANDB_PROJECT="llamafec-sft"      # 设置wandb项目名称
-export WANDB_ENTITY="maplesakura-tianjin-university"   # 设置wandb用户名
+export WANDB_ENTITY="maplesakura-tianjin-university"   # 设置wandb用户名export TRANSFORMERS_OFFLINE=1    # 强制使用本地缓存
+export HF_HOME="/work/2024/zhulei/transformers_cache"  # 设置Hugging Face缓存目录
 
 mkdir -p ../checkpoints/llama-2-7b-chat-sft
 
