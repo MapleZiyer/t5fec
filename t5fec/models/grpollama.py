@@ -44,6 +44,8 @@ class GRPOScriptArguments:
     )
 
 def main():
+    parser = transformers.HfArgumentParser((transformers.TrainingArguments,))
+    training_args, = parser.parse_args_into_dataclasses()
     checkpoint_dir="../checkpoints/llama-2-7b-chat-sft"
     # 训练参数设置
     training_args = transformers.TrainingArguments(
@@ -199,7 +201,7 @@ def main():
     program_executor = Program_Execution()
     
     # 定义奖励函数，并初始化 sentence transformer 模型
-    similarity_model = SentenceTransformer('paraphrase-MiniLM-L6-v2')
+    similarity_model = SentenceTransformer('sentence-transformers/paraphrase-MiniLM-L6-v2')
     def accuracy_reward(outputs, batch):
         rewards = []
         for output, sample in zip(outputs, batch):
