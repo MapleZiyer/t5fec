@@ -32,8 +32,8 @@ def main():
         output_dir="../checkpoints/llama-2-7b-chat-sft",
         learning_rate=2e-5,
         num_train_epochs=1,
-        per_device_train_batch_size=4,  # 减小batch size以适应更大的模型
-        gradient_accumulation_steps=8,  # 增加梯度累积步数
+        per_device_train_batch_size=4,  # 每个GPU的batch size
+        gradient_accumulation_steps=8,  # 梯度累积步数
         gradient_checkpointing=True,
         bf16=True,
         logging_steps=10,
@@ -44,6 +44,11 @@ def main():
         remove_unused_columns=True,
         report_to=["wandb"],
         run_name="llama-2-7b-chat-sft-run",
+        # DeepSpeed配置
+        deepspeed="../configs/ds_config_zero3.json",  # DeepSpeed配置文件路径
+        local_rank=-1,  # 分布式训练的本地rank
+        ddp_find_unused_parameters=False,  # 优化DDP性能
+        fp16=False,  # 使用bf16而不是fp16
     )
 
     # 设置随机种子
