@@ -47,29 +47,26 @@ def main():
     parser = transformers.HfArgumentParser((transformers.TrainingArguments,))
     training_args, = parser.parse_args_into_dataclasses()
     checkpoint_dir="../checkpoints/llama-2-7b-chat-sft"
-    # 训练参数设置
-    training_args = transformers.TrainingArguments(
-        output_dir="../checkpoints/llama-2-7b-chat-grpo",
-        learning_rate=2e-5,
-        num_train_epochs=1,
-        per_device_train_batch_size=8,  # 7B模型可以使用更大的batch size
-        gradient_accumulation_steps=8,  # 增加梯度累积步数
-        gradient_checkpointing=True,
-        bf16=True,
-        logging_steps=10,
-        save_strategy="epoch",
-        evaluation_strategy="no",
-        save_total_limit=2,
-        do_train=True,
-        remove_unused_columns=False,
-        report_to=["wandb"],
-        run_name="llama-2-7b-chat-grpo-run",
-        # 添加DeepSpeed配置
-        deepspeed="../configs/ds_config_zero3_llama.json",
-        local_rank=-1,  # 分布式训练的本地rank
-        ddp_find_unused_parameters=False,  # 优化DDP性能
-        fp16=False,  # 使用bf16而不是fp16
-    )
+    
+    # 更新训练参数
+    training_args.output_dir = "../checkpoints/llama-2-7b-chat-grpo"
+    training_args.learning_rate = 2e-5
+    training_args.num_train_epochs = 1
+    training_args.per_device_train_batch_size = 8
+    training_args.gradient_accumulation_steps = 8
+    training_args.gradient_checkpointing = True
+    training_args.bf16 = True
+    training_args.logging_steps = 10
+    training_args.save_strategy = "epoch"
+    training_args.evaluation_strategy = "no"
+    training_args.save_total_limit = 2
+    training_args.do_train = True
+    training_args.remove_unused_columns = False
+    training_args.report_to = ["wandb"]
+    training_args.run_name = "llama-2-7b-chat-grpo-run"
+    training_args.ddp_find_unused_parameters = False
+    training_args.fp16 = False
+    
     # 添加reward_weights参数
     setattr(training_args, 'reward_weights', [1.0])
     setattr(training_args, 'reward_scale', 1.0)
