@@ -44,13 +44,13 @@ class GRPOScriptArguments:
     )
 
 def main():
-    checkpoint_dir="../checkpoints/llama-2-13b-chat-sft"
+    checkpoint_dir="../checkpoints/llama-2-7b-chat-sft"
     # 训练参数设置
     training_args = transformers.TrainingArguments(
-        output_dir="../checkpoints/llama-2-13b-chat-grpo",
+        output_dir="../checkpoints/llama-2-7b-chat-grpo",
         learning_rate=2e-5,
         num_train_epochs=1,
-        per_device_train_batch_size=4,  # 减小batch size以适应更大的模型
+        per_device_train_batch_size=8,  # 7B模型可以使用更大的batch size
         gradient_accumulation_steps=8,  # 增加梯度累积步数
         gradient_checkpointing=True,
         bf16=True,
@@ -62,6 +62,11 @@ def main():
         remove_unused_columns=False,
         report_to=["wandb"],
         run_name="llama-2-13b-chat-grpo-run",
+        # 添加DeepSpeed配置
+        deepspeed="../configs/ds_config_zero3_llama.json",
+        local_rank=-1,  # 分布式训练的本地rank
+        ddp_find_unused_parameters=False,  # 优化DDP性能
+        fp16=False,  # 使用bf16而不是fp16
     )
     # 添加reward_weights参数
     setattr(training_args, 'reward_weights', [1.0])
@@ -104,7 +109,7 @@ def main():
     transformers.utils.logging.enable_explicit_format()
 
     # 定义预训练模型名称
-    model_name = "meta-llama/Llama-2-13b-chat-hf"
+    model_name = "meta-llama/Llama-2-7b-chat-hf"
     # 设置模型加载参数
     torch_dtype = torch.bfloat16 if training_args.bf16 else torch.float32
     model_kwargs = dict(
@@ -246,7 +251,7 @@ def main():
 
     # 开始训练
     logger.info("*** Starting training ***")
-    wandb.init(project="llama-2-13b-chat-grpo", name=training_args.run_name)
+    wandb.init(project="llama-2-7b-chat-grpo", name=training_args.run_name)
     train_result = trainer.train(resume_from_checkpoint=last_checkpoint if last_checkpoint else None)
     
     metrics = train_result.metrics
