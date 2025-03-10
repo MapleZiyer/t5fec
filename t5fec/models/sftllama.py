@@ -9,6 +9,7 @@ from datasets import load_dataset
 from transformers import set_seed
 from transformers.trainer_utils import get_last_checkpoint
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import LoraConfig, get_peft_model
 
 from trl import (
     SFTTrainer,
@@ -29,7 +30,7 @@ logger = logging.getLogger(__name__)
 def main():
     # 训练参数设置
     training_args = transformers.TrainingArguments(
-        output_dir="../checkpoints/llama-2-7b-chat-sft",
+        output_dir="../checkpoints/llama-2-7b-chat-sft-lora",
         learning_rate=2e-5,
         num_train_epochs=1,
         per_device_train_batch_size=4,  # 每个GPU的batch size
@@ -43,7 +44,7 @@ def main():
         do_train=True,
         remove_unused_columns=True,
         report_to=["wandb"],
-        run_name="llama-2-7b-chat-sft-run",
+        run_name="llama-2-7b-chat-sft-lora-run",
         # DeepSpeed配置
         deepspeed="../configs/ds_config_zero3.json",  # DeepSpeed配置文件路径
         local_rank=-1,  # 分布式训练的本地rank
@@ -79,10 +80,26 @@ def main():
         use_cache=False if training_args.gradient_checkpointing else True
     )
     
+    # 加载模型实例
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         **model_kwargs
     )
+
+    # 配置LoRA
+    lora_config = LoraConfig(
+        r=8,  # LoRA适配器的维度
+        lora_alpha=32,  # LoRA缩放因子
+        target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],  # 需要应用LoRA的模块
+        lora_dropout=0.05,  # LoRA dropout概率
+        bias="none",  # 是否包含偏置项
+        task_type="CAUSAL_LM"  # 任务类型
+    )
+    
+    # 将模型转换为LoRA模型
+    model = get_peft_model(model, lora_config)
+    model.print_trainable_parameters()
+
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"  # Llama使用右侧填充
