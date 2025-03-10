@@ -78,7 +78,7 @@ def main():
     # 添加 max_completion_length 参数
     setattr(training_args, 'max_completion_length', 256)
     # 添加 num_generations 参数
-    setattr(training_args, 'num_generations', 4)  # 设置每个样本生成4个候选答案
+    setattr(training_args, 'num_generations', 2)  # 设置每个样本生成2个候选答案，以匹配全局训练批次大小
     # 添加 use_vllm 参数
     setattr(training_args, 'use_vllm', False)
     # 添加 beta 参数
