@@ -71,8 +71,6 @@ def main():
     # 添加reward_weights参数
     setattr(training_args, 'reward_weights', [1.0])
     setattr(training_args, 'reward_scale', 1.0)
-    # 添加 model_init_kwargs 参数（这里先设为空字典）
-    setattr(training_args, 'model_init_kwargs', {})
     # 添加 max_prompt_length 参数
     setattr(training_args, 'max_prompt_length', 4096)
     # 添加 max_completion_length 参数
@@ -149,7 +147,7 @@ def main():
         Corrected statement: """
         inputs = prompt.format(evidence=examples['evidence'], original_statement=examples['claim'])
         # 使用更明确的日志格式
-        logger.info("Processing input:\n%s", inputs)
+
         if not inputs.strip():
             inputs = "No input provided."
             logger.warning("Empty input detected, using default input")
@@ -161,9 +159,6 @@ def main():
             padding='max_length',
             return_tensors=None
         )
-
-        print(f"\nToken 总数: {len(model_inputs['input_ids'])}\n")
-        logging.info(f"\nToken 总数: {len(model_inputs['input_ids'])}\n")
 
         # 确保所有必要的字段都存在且维度正确
         if 'input_ids' not in model_inputs or len(model_inputs['input_ids']) == 0:
@@ -186,10 +181,6 @@ def main():
 
         # 添加prompt字段
         model_inputs['prompt'] = inputs
-
-        # 打印张量维度信息用于调试
-        logger.info(f"Input IDs shape: {model_inputs['input_ids'].shape}")
-        logger.info(f"Attention mask shape: {model_inputs['attention_mask'].shape}")
 
         return model_inputs
 
