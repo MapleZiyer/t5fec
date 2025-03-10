@@ -50,8 +50,8 @@ def main():
         output_dir="../checkpoints/llama-2-7b-chat-grpo",
         learning_rate=2e-5,
         num_train_epochs=1,
-        per_device_train_batch_size=2,  # 进一步减小batch size以降低显存占用
-        gradient_accumulation_steps=16,  # 相应增加梯度累积步数以保持总批次大小
+        per_device_train_batch_size=1,  # 减小batch size以降低显存占用
+        gradient_accumulation_steps=32,  # 相应增加梯度累积步数以保持总批次大小
         gradient_checkpointing=True,
         bf16=True,
         logging_steps=10,
