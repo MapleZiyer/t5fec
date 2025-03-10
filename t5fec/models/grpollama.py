@@ -18,6 +18,7 @@ from sentence_transformers import SentenceTransformer
 
 from fc.program_generator import Reasoning_Program_Generator
 from fc.program_execution import Program_Execution
+from peft import LoraConfig, get_peft_model
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -125,6 +126,20 @@ def main():
         model = AutoModelForCausalLM.from_pretrained(last_checkpoint, **model_kwargs)
     else:
         model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
+
+    # 配置LoRA
+    lora_config = LoraConfig(
+        r=8,  # LoRA适配器的维度
+        lora_alpha=32,  # LoRA缩放因子
+        target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],  # 需要应用LoRA的模块
+        lora_dropout=0.05,  # LoRA dropout概率
+        bias="none",  # 是否包含偏置项
+        task_type="CAUSAL_LM"  # 任务类型
+    )
+    
+    # 将模型转换为LoRA模型
+    model = get_peft_model(model, lora_config)
+    model.print_trainable_parameters()
 
     # 加载分词器（使用预训练模型名称）
     tokenizer = AutoTokenizer.from_pretrained(model_name)

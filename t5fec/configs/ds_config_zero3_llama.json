@@ -27,5 +27,9 @@
     "steps_per_print": 10,
     "train_batch_size": "auto",
     "train_micro_batch_size_per_gpu": "auto",
-    "wall_clock_breakdown": false
+    "wall_clock_breakdown": false,
+    "zero_allow_untested_optimizer": true,
+    "fp16": {
+        "enabled": false
+    }
 }
