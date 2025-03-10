@@ -5,7 +5,7 @@ set -e
 trap 'echo "Error occurred at line $LINENO. Command: $BASH_COMMAND"' ERR
 
 # 设置环境变量
-export CUDA_VISIBLE_DEVICES=4,5,6,7
+export CUDA_VISIBLE_DEVICES=3,4,5,6,7
 export WANDB_PROJECT="llama-2-7b-chat-grpo"      # 设置wandb项目名称
 export WANDB_ENTITY="maplesakura-tianjin-university"   # 设置wandb用户名
 
@@ -24,7 +24,7 @@ echo "WANDB_PROJECT: ${WANDB_PROJECT}"
 
 # 运行训练脚本
 echo "Starting training..."
-deepspeed --num_gpus=4 ../models/grpollama.py
+deepspeed --num_gpus=5 ../models/grpollama.py
 
 # 检查训练是否成功完成
 if [ $? -eq 0 ]; then
