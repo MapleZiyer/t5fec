@@ -95,10 +95,12 @@ def main():
 
     # 检查最新的 checkpoint
     last_checkpoint = None
-    if os.path.isdir(checkpoint_dir):
-        last_checkpoint = get_last_checkpoint(checkpoint_dir)
-    if last_checkpoint is not None:
-        logger.info(f"Checkpoint detected, resuming training at {last_checkpoint}.")
+    #if os.path.isdir(checkpoint_dir):
+        #last_checkpoint = get_last_checkpoint(checkpoint_dir)
+    #if last_checkpoint is not None:
+        #logger.info(f"Checkpoint detected, resuming training at {last_checkpoint}.")
+
+    
 
     # 设置日志级别
     log_level = logging.INFO
