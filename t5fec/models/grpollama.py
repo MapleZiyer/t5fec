@@ -71,6 +71,8 @@ def main():
     # 添加reward_weights参数
     setattr(training_args, 'reward_weights', [1.0])
     setattr(training_args, 'reward_scale', 1.0)
+    # 添加 model_init_kwargs 参数
+    setattr(training_args, 'model_init_kwargs', None)
     # 添加 max_prompt_length 参数
     setattr(training_args, 'max_prompt_length', 4096)
     # 添加 max_completion_length 参数
