@@ -61,7 +61,7 @@ def main():
         do_train=True,
         remove_unused_columns=False,
         report_to=["wandb"],
-        run_name="llama-2-13b-chat-grpo-run",
+        run_name="llama-2-7b-chat-grpo-run",
         # 添加DeepSpeed配置
         deepspeed="../configs/ds_config_zero3_llama.json",
         local_rank=-1,  # 分布式训练的本地rank
