@@ -45,14 +45,14 @@ class GRPOScriptArguments:
     )
 
 def main():
-    checkpoint_dir="../checkpoints/long-t5-tglobal-large-sft"
+    checkpoint_dir="../checkpoints/llama-3.2-1b-instruct-grpo"
     # 训练参数设置
     training_args = transformers.TrainingArguments(
-        output_dir="../checkpoints/long-t5-tglobal-large-grpo",
+        output_dir="../checkpoints/llama-3.2-1b-instruct-grpo",
         learning_rate=2e-5,
         num_train_epochs=1,
-        per_device_train_batch_size=4,  # 进一步减小batch size以降低显存占用
-        gradient_accumulation_steps=8,  # 相应增加梯度累积步数以保持总批次大小
+        per_device_train_batch_size=4,  # 由于是较小的模型，可以适当增加batch size
+        gradient_accumulation_steps=8,  # 相应减少梯度累积步数
         gradient_checkpointing=True,
         bf16=True,
         logging_steps=10,
@@ -62,7 +62,7 @@ def main():
         do_train=True,
         remove_unused_columns=False,
         report_to=["wandb"],
-        run_name="long-t5-tglobal-large-grpo-run",
+        run_name="llama-3.2-1b-instruct-grpo-run",
         # 添加DeepSpeed配置
         deepspeed="../configs/ds_config_zero3.json",
         local_rank=-1,  # 分布式训练的本地rank
@@ -96,10 +96,10 @@ def main():
 
     # 检查最新的 checkpoint
     last_checkpoint = None
-    #if os.path.isdir(checkpoint_dir):
-        #last_checkpoint = get_last_checkpoint(checkpoint_dir)
-    #if last_checkpoint is not None:
-        #logger.info(f"Checkpoint detected, resuming training at {last_checkpoint}.")
+    if os.path.isdir(checkpoint_dir):
+        last_checkpoint = get_last_checkpoint(checkpoint_dir)
+    if last_checkpoint is not None:
+        logger.info(f"Checkpoint detected, resuming training at {last_checkpoint}.")
 
     
 
@@ -112,7 +112,7 @@ def main():
     transformers.utils.logging.enable_explicit_format()
 
     # 定义预训练模型名称
-    model_name = "google/long-t5-tglobal-large"
+    model_name = "meta-llama/Llama-3.2-1B-Instruct"
     # 设置模型加载参数
     torch_dtype = torch.bfloat16 if training_args.bf16 else torch.float32
     model_kwargs = dict(
@@ -248,7 +248,7 @@ def main():
 
     # 开始训练
     logger.info("*** Starting training ***")
-    wandb.init(project="long-t5-tglobal-large-grpo", name=training_args.run_name)
+    wandb.init(project="llama-3.2-1b-instruct-grpo", name=training_args.run_name)
     train_result = trainer.train(resume_from_checkpoint=last_checkpoint if last_checkpoint else None)
     
     metrics = train_result.metrics

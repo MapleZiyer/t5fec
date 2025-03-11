@@ -6,7 +6,7 @@ trap 'echo "Error occurred at line $LINENO. Command: $BASH_COMMAND"' ERR
 
 # 设置环境变量
 export CUDA_VISIBLE_DEVICES=4,5,6,7
-export WANDB_PROJECT="long-t5-tglobal-large-grpo"      # 设置wandb项目名称
+export WANDB_PROJECT="llama-3.2-1b-instruct-grpo"      # 设置wandb项目名称
 export WANDB_ENTITY="maplesakura-tianjin-university"   # 设置wandb用户名
 
 # 禁用GPU间的P2P通信
@@ -14,7 +14,7 @@ export NCCL_P2P_DISABLE=1
 export NCCL_IB_DISABLE=0
 export NCCL_DEBUG=INFO
 
-mkdir -p ../checkpoints/long-t5-tglobal-large-grpo
+mkdir -p ../checkpoints/llama-3.2-1b-instruct-grpo
 
 # 打印训练配置信息
 echo "Starting training with following configuration:"

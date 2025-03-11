@@ -18,15 +18,15 @@
         "stage3_prefetch_bucket_size": 5e6,
         "stage3_param_persistence_threshold": 1e4,
         "sub_group_size": 1e8,
-        "stage3_max_live_parameters": 1e8,
-        "stage3_max_reuse_distance": 1e8,
+        "stage3_max_live_parameters": 1e7,
+        "stage3_max_reuse_distance": 1e7,
         "stage3_gather_16bit_weights_on_model_save": true
     },
-    "gradient_accumulation_steps": 32,
+    "gradient_accumulation_steps": 8,
     "gradient_clipping": 1.0,
     "steps_per_print": 10,
     "train_batch_size": "auto",
-    "train_micro_batch_size_per_gpu": 1,
+    "train_micro_batch_size_per_gpu": 2,
     "fp16": {
         "enabled": false
     },
