@@ -72,9 +72,11 @@ class T5Wrapper(torch.nn.Module):
         """启用梯度检查点功能"""
         return self.model.gradient_checkpointing_enable(gradient_checkpointing_kwargs=gradient_checkpointing_kwargs)
 
-    def generate(self, *args, **kwargs):
-        """添加generate方法，直接调用底层模型的generate方法"""
-        return self.model.generate(*args, **kwargs)
+    def generate(self, input_ids=None, **kwargs):
+        """修改generate方法以正确处理LoRA模型的参数"""
+        if input_ids is None:
+            raise ValueError("input_ids must be provided")
+        return self.model.generate(input_ids, **kwargs)
 
 def main():
     checkpoint_dir = "../checkpoints/long-t5-tglobal-large-sft"

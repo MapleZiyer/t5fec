@@ -9,10 +9,12 @@ export CUDA_VISIBLE_DEVICES=3,4,5,6,7
 export WANDB_PROJECT="long-t5-tglobal-large-grpo"      # 设置wandb项目名称
 export WANDB_ENTITY="maplesakura-tianjin-university"   # 设置wandb用户名
 
-# 禁用GPU间的P2P通信
+# 优化分布式训练配置
 export NCCL_P2P_DISABLE=1
 export NCCL_IB_DISABLE=0
 export NCCL_DEBUG=INFO
+export TORCH_DISTRIBUTED_DEBUG=INFO
+export CUDA_LAUNCH_BLOCKING=1
 
 mkdir -p ../checkpoints/long-t5-tglobal-large-grpo
 

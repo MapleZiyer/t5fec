@@ -27,6 +27,10 @@
     "steps_per_print": 10,
     "train_batch_size": "auto",
     "train_micro_batch_size_per_gpu": 1,
+    "fp16": {
+        "enabled": false
+    },
+    "zero_force_ds_cpu_optimizer": false,
     "wall_clock_breakdown": false,
     "memory_efficient_linear": true,
     "memory_efficient_cross_entropy": true,
