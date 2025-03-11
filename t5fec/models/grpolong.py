@@ -50,6 +50,7 @@ class T5Wrapper(torch.nn.Module):
         super().__init__()
         self.model = model
         self.config = model.config  # 添加config属性
+        self.warnings_issued = {"estimate_tokens": False}  # 添加warnings_issued属性
 
     def forward(self, **kwargs):
         if "logits_to_keep" in kwargs:
