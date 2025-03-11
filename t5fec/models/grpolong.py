@@ -70,6 +70,10 @@ class T5Wrapper(torch.nn.Module):
         """启用梯度检查点功能"""
         return self.model.gradient_checkpointing_enable(gradient_checkpointing_kwargs=gradient_checkpointing_kwargs)
 
+    def generate(self, *args, **kwargs):
+        """添加generate方法，直接调用底层模型的generate方法"""
+        return self.model.generate(*args, **kwargs)
+
 def main():
     checkpoint_dir = "../checkpoints/long-t5-tglobal-large-sft"
     # 训练参数设置
@@ -77,8 +81,8 @@ def main():
         output_dir="../checkpoints/long-t5-tglobal-large-grpo",
         learning_rate=2e-5,
         num_train_epochs=1,
-        per_device_train_batch_size=8,
-        gradient_accumulation_steps=4,
+        per_device_train_batch_size=2,  # 减小batch size
+        gradient_accumulation_steps=16,  # 增加梯度累积步数
         gradient_checkpointing=True,
         bf16=True,
         logging_steps=10,
@@ -96,7 +100,7 @@ def main():
     setattr(training_args, 'model_init_kwargs', {})
     setattr(training_args, 'max_prompt_length', 4096)
     setattr(training_args, 'max_completion_length', 256)
-    setattr(training_args, 'num_generations', 4)
+    setattr(training_args, 'num_generations', 1)
     setattr(training_args, 'use_vllm', False)
     setattr(training_args, 'beta', 0.1)
     setattr(training_args, 'log_completions', False)
