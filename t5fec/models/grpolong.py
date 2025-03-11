@@ -51,25 +51,24 @@ class T5Wrapper(torch.nn.Module):
             kwargs.pop("logits_to_keep")
         return self.model(**kwargs)
 
-# 新建一个子类Trainer，使其适配 encoder-decoder 模型
+# 定义 GRPOTrainer 的子类，用猴子补丁方式避免加载 ref_model
 from trl.trainer.grpo_trainer import GRPOTrainer as BaseGRPOTrainer
 
 class GRPOSeq2SeqTrainer(BaseGRPOTrainer):
     def __init__(self, model, reward_funcs, args, train_dataset, processing_class):
-        # 不调用原来的从预训练加载参考模型的逻辑，直接将 ref_model 指向已有模型
-        self.model = model
-        self.reward_funcs = reward_funcs
-        self.args = args
-        self.train_dataset = train_dataset
-        self.processing_class = processing_class
-        # 直接使用相同模型作为参考模型
+        # 临时替换 AutoModelForSeq2SeqLM.from_pretrained，避免加载参考模型
+        original_from_pretrained = AutoModelForSeq2SeqLM.from_pretrained
+        AutoModelForSeq2LM_from_pretrained = AutoModelForSeq2SeqLM.from_pretrained  # 保存备用
+        try:
+            # 替换为 lambda，直接返回传入的 model 实例
+            AutoModelForSeq2SeqLM.from_pretrained = lambda *a, **kw: model
+            # 调用父类 __init__，这样 ref_model 就会被设为 model
+            super().__init__(model, reward_funcs, args, train_dataset, processing_class)
+        finally:
+            # 恢复原来的 from_pretrained 函数
+            AutoModelForSeq2SeqLM.from_pretrained = original_from_pretrained
+        # 强制确保参考模型为当前模型
         self.ref_model = model
-        # 调用父类其他初始化逻辑（如果有需要，可以调用 self._setup_trainer() 或类似方法）
-        # 注意：这里不调用父类的 __init__ 完整方法，因为那会重新加载 ref_model
-        # 可以手动设置一些必要的属性：
-        self.callback_handler = None
-        self.state = None
-        self.control = None
 
 def main():
     checkpoint_dir = "../checkpoints/long-t5-tglobal-large-sft"
@@ -109,7 +108,7 @@ def main():
 
     set_seed(42)
 
-    # 检查是否有 checkpoint（这里暂不使用 checkpoint）
+    # 此处暂不使用 checkpoint
     last_checkpoint = None
     # if os.path.isdir(checkpoint_dir):
     #     last_checkpoint = get_last_checkpoint(checkpoint_dir)
@@ -131,8 +130,6 @@ def main():
     
     # 加载模型实例
     model = AutoModelForSeq2SeqLM.from_pretrained(model_name, **model_kwargs)
-
-    # 如果需要，可以使用包装器（这里不一定需要）
     model = T5Wrapper(model)
 
     # 加载 tokenizer
@@ -161,7 +158,7 @@ def main():
             padding="max_length",
             return_tensors="pt"
         )
-        # 将 prompt 存为字符串（用于后续生成和奖励计算）
+        # 将 prompt 存为字符串
         model_inputs["prompt"] = formatted_prompt
 
         # 强制保证输入序列末尾为 EOS
@@ -210,7 +207,7 @@ def main():
 
     reward_funcs = [accuracy_reward]
 
-    # 使用我们新定义的 GRPOSeq2SeqTrainer 来初始化训练器
+    # 使用自定义的 GRPOSeq2SeqTrainer 初始化训练器
     trainer = GRPOSeq2SeqTrainer(
         model=model,
         reward_funcs=reward_funcs,
