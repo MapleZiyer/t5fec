@@ -123,7 +123,7 @@ def main():
 
         # 处理 label 并右移（符合 T5 训练）
         labels["input_ids"] = [
-            [(l if l != tokenizer.pad_token_id else -100) for l in label] for label in labels["input_ids"]
+            (l if l != tokenizer.pad_token_id else -100) for l in labels["input_ids"]
         ]
 
         inputs["labels"] = labels["input_ids"]
