@@ -51,11 +51,20 @@ class T5Wrapper(torch.nn.Module):
         self.model = model
         self.config = model.config  # 添加config属性
         self.warnings_issued = {"estimate_tokens": False}  # 添加warnings_issued属性
+        self._model_tags = set()
 
     def forward(self, **kwargs):
         if "logits_to_keep" in kwargs:
             kwargs.pop("logits_to_keep")
         return self.model(**kwargs)
+
+    def add_model_tags(self, tags):
+        """添加模型标签"""
+        self._model_tags.update(tags)
+
+    def get_model_tags(self):
+        """获取模型标签"""
+        return list(self._model_tags)
 
 def main():
     checkpoint_dir = "../checkpoints/long-t5-tglobal-large-sft"
