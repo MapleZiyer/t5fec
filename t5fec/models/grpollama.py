@@ -9,7 +9,7 @@ import transformers
 from datasets import load_dataset
 from transformers import set_seed
 from transformers.trainer_utils import get_last_checkpoint
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 from trl import GRPOTrainer, get_peft_config
 import wandb
@@ -18,7 +18,7 @@ from sentence_transformers import SentenceTransformer
 
 from fc.program_generator import Reasoning_Program_Generator
 from fc.program_execution import Program_Execution
-from peft import LoraConfig, get_peft_model
+# 移除LoRA相关导入
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -45,10 +45,10 @@ class GRPOScriptArguments:
     )
 
 def main():
-    checkpoint_dir="../checkpoints/llama-2-7b-chat-sft"
+    checkpoint_dir="../checkpoints/long-t5-tglobal-large-sft"
     # 训练参数设置
     training_args = transformers.TrainingArguments(
-        output_dir="../checkpoints/llama-2-7b-chat-grpo",
+        output_dir="../checkpoints/long-t5-tglobal-large-grpo",
         learning_rate=2e-5,
         num_train_epochs=1,
         per_device_train_batch_size=4,  # 进一步减小batch size以降低显存占用
@@ -62,9 +62,9 @@ def main():
         do_train=True,
         remove_unused_columns=False,
         report_to=["wandb"],
-        run_name="llama-2-7b-chat-grpo-run",
+        run_name="long-t5-tglobal-large-grpo-run",
         # 添加DeepSpeed配置
-        deepspeed="../configs/ds_config_zero3_llama.json",
+        deepspeed="../configs/ds_config_zero3.json",
         local_rank=-1,  # 分布式训练的本地rank
         ddp_find_unused_parameters=False,  # 优化DDP性能
         fp16=False,  # 使用bf16而不是fp16
@@ -112,7 +112,7 @@ def main():
     transformers.utils.logging.enable_explicit_format()
 
     # 定义预训练模型名称
-    model_name = "meta-llama/Llama-2-7b-chat-hf"
+    model_name = "google/long-t5-tglobal-large"
     # 设置模型加载参数
     torch_dtype = torch.bfloat16 if training_args.bf16 else torch.float32
     model_kwargs = dict(
@@ -123,23 +123,11 @@ def main():
     # 加载模型实例（若有 checkpoint 则从 checkpoint 加载，否则从预训练模型加载）
     if last_checkpoint is not None:
         logger.info(f"Loading model from checkpoint: {last_checkpoint}")
-        model = AutoModelForCausalLM.from_pretrained(last_checkpoint, **model_kwargs)
+        model = AutoModelForSeq2SeqLM.from_pretrained(last_checkpoint, **model_kwargs)
     else:
-        model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_name, **model_kwargs)
 
-    # 配置LoRA
-    lora_config = LoraConfig(
-        r=8,  # LoRA适配器的维度
-        lora_alpha=32,  # LoRA缩放因子
-        target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],  # 需要应用LoRA的模块
-        lora_dropout=0.05,  # LoRA dropout概率
-        bias="none",  # 是否包含偏置项
-        task_type="CAUSAL_LM"  # 任务类型
-    )
-    
-    # 将模型转换为LoRA模型
-    model = get_peft_model(model, lora_config)
-    model.print_trainable_parameters()
+    # 直接使用完整模型训练
 
     # 加载分词器（使用预训练模型名称）
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -260,7 +248,7 @@ def main():
 
     # 开始训练
     logger.info("*** Starting training ***")
-    wandb.init(project="llama-2-7b-chat-grpo", name=training_args.run_name)
+    wandb.init(project="long-t5-tglobal-large-grpo", name=training_args.run_name)
     train_result = trainer.train(resume_from_checkpoint=last_checkpoint if last_checkpoint else None)
     
     metrics = train_result.metrics
