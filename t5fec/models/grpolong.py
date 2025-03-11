@@ -81,8 +81,8 @@ def main():
         output_dir="../checkpoints/long-t5-tglobal-large-grpo",
         learning_rate=2e-5,
         num_train_epochs=1,
-        per_device_train_batch_size=2,  # 减小batch size
-        gradient_accumulation_steps=16,  # 增加梯度累积步数
+        per_device_train_batch_size=1,  # 进一步减小batch size
+        gradient_accumulation_steps=32,  # 进一步增加梯度累积步数
         gradient_checkpointing=True,
         bf16=True,
         logging_steps=10,
@@ -127,7 +127,7 @@ def main():
 
     # 定义预训练模型名称
     model_pretrained_name = "google/long-t5-tglobal-large"
-    # 加载模型实例
+    # 加载模型实例，使用优化的加载参数
     if last_checkpoint is not None:
         logger.info(f"Loading model from checkpoint: {last_checkpoint}")
         model = AutoModelForSeq2SeqLM.from_pretrained(last_checkpoint)
