@@ -11,10 +11,12 @@ export WANDB_ENTITY="maplesakura-tianjin-university"   # 设置wandb用户名
 
 # 优化分布式训练配置
 export NCCL_P2P_DISABLE=1
-export NCCL_IB_DISABLE=0
-export NCCL_DEBUG=INFO
-export TORCH_DISTRIBUTED_DEBUG=INFO
-export CUDA_LAUNCH_BLOCKING=1
+export NCCL_IB_DISABLE=1
+export NCCL_DEBUG=WARN
+export NCCL_SOCKET_IFNAME=eth0
+export NCCL_MIN_CHANNELS=1
+export TORCH_DISTRIBUTED_DEBUG=OFF
+export CUDA_LAUNCH_BLOCKING=0
 
 mkdir -p ../checkpoints/long-t5-tglobal-large-grpo
 

@@ -76,7 +76,9 @@ class T5Wrapper(torch.nn.Module):
         """修改generate方法以正确处理LoRA模型的参数"""
         if input_ids is None:
             raise ValueError("input_ids must be provided")
-        return self.model.generate(input_ids, **kwargs)
+        # 将input_ids作为kwargs传入
+        kwargs["input_ids"] = input_ids
+        return self.model.generate(**kwargs)
 
 def main():
     checkpoint_dir = "../checkpoints/long-t5-tglobal-large-sft"
