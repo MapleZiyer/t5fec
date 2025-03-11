@@ -24,7 +24,7 @@ echo "WANDB_PROJECT: ${WANDB_PROJECT}"
 
 # 运行训练脚本
 echo "Starting training..."
-deepspeed --num_gpus=4 ../models/grpollama.py
+deepspeed --num_gpus=4 ../models/grpolong.py
 
 # 检查训练是否成功完成
 if [ $? -eq 0 ]; then
