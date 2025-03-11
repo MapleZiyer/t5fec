@@ -19,6 +19,8 @@ from sentence_transformers import SentenceTransformer
 from fc.program_generator import Reasoning_Program_Generator
 from fc.program_execution import Program_Execution
 
+from peft import LoraConfig, get_peft_model
+
 # 设置日志
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -133,6 +135,20 @@ def main():
         model = AutoModelForSeq2SeqLM.from_pretrained(last_checkpoint)
     else:
         model = AutoModelForSeq2SeqLM.from_pretrained(model_pretrained_name)
+
+    # 配置LoRA
+    lora_config = LoraConfig(
+        r=8,  # LoRA适配器的维度
+        lora_alpha=32,  # LoRA缩放因子
+        target_modules=["q", "k", "v", "o"],  # 需要应用LoRA的模块
+        lora_dropout=0.05,  # LoRA dropout概率
+        bias="none",  # 是否包含偏置项
+        task_type="SEQ_2_SEQ_LM"  # 任务类型
+    )
+    
+    # 将模型转换为LoRA模型
+    model = get_peft_model(model, lora_config)
+    model.print_trainable_parameters()
 
     # 使用包装器包装模型，避免 logits_to_keep 参数问题
     model = T5Wrapper(model)
