@@ -49,6 +49,8 @@ class T5Wrapper(torch.nn.Module):
     def __init__(self, model):
         super().__init__()
         self.model = model
+        self.config = model.config  # 添加config属性
+
     def forward(self, **kwargs):
         if "logits_to_keep" in kwargs:
             kwargs.pop("logits_to_keep")
