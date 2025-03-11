@@ -9,6 +9,11 @@ export CUDA_VISIBLE_DEVICES=0
 export WANDB_PROJECT="t5fec-grpo"      # 设置wandb项目名称
 export WANDB_ENTITY="maplesakura-tianjin-university"   # 设置wandb用户名
 
+# 禁用GPU间的P2P通信
+export NCCL_P2P_DISABLE=1
+export NCCL_IB_DISABLE=0
+export NCCL_DEBUG=INFO
+
 mkdir -p ../checkpoints/flan-t5-large-grpo
 
 # 打印训练配置信息
