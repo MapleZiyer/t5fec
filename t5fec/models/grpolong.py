@@ -11,7 +11,7 @@ from transformers import set_seed
 from transformers.trainer_utils import get_last_checkpoint
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
-from trl import GRPOTrainer
+from trl import GRPOTrainer  # 原始 GRPOTrainer
 import wandb
 
 from sentence_transformers import SentenceTransformer
@@ -19,7 +19,7 @@ from sentence_transformers import SentenceTransformer
 from fc.program_generator import Reasoning_Program_Generator
 from fc.program_execution import Program_Execution
 
-# 设定日志格式
+# 设置日志
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
@@ -28,7 +28,6 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# 设置日志级别
 datasets.utils.logging.set_verbosity(logging.INFO)
 transformers.utils.logging.set_verbosity(logging.INFO)
 transformers.utils.logging.enable_default_handler()
@@ -39,15 +38,42 @@ class GRPOScriptArguments:
     """GRPO 训练参数"""
     reward_funcs: list[str] = field(
         default_factory=lambda: ["accuracy", "format", "tag_count"],
-        metadata={
-            "help": "奖励函数列表。可选: 'accuracy', 'format', 'tag_count'"
-        },
+        metadata={"help": "奖励函数列表。可选: 'accuracy', 'format', 'tag_count'"}
     )
+
+# 定义包装器，移除不支持的 logits_to_keep 参数（可选）
+class T5Wrapper(torch.nn.Module):
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+    def forward(self, **kwargs):
+        if "logits_to_keep" in kwargs:
+            kwargs.pop("logits_to_keep")
+        return self.model(**kwargs)
+
+# 新建一个子类Trainer，使其适配 encoder-decoder 模型
+from trl.trainer.grpo_trainer import GRPOTrainer as BaseGRPOTrainer
+
+class GRPOSeq2SeqTrainer(BaseGRPOTrainer):
+    def __init__(self, model, reward_funcs, args, train_dataset, processing_class):
+        # 不调用原来的从预训练加载参考模型的逻辑，直接将 ref_model 指向已有模型
+        self.model = model
+        self.reward_funcs = reward_funcs
+        self.args = args
+        self.train_dataset = train_dataset
+        self.processing_class = processing_class
+        # 直接使用相同模型作为参考模型
+        self.ref_model = model
+        # 调用父类其他初始化逻辑（如果有需要，可以调用 self._setup_trainer() 或类似方法）
+        # 注意：这里不调用父类的 __init__ 完整方法，因为那会重新加载 ref_model
+        # 可以手动设置一些必要的属性：
+        self.callback_handler = None
+        self.state = None
+        self.control = None
 
 def main():
     checkpoint_dir = "../checkpoints/long-t5-tglobal-large-sft"
-    
-    # 训练参数
+    # 训练参数设置
     training_args = transformers.TrainingArguments(
         output_dir="../checkpoints/long-t5-tglobal-large-grpo",
         learning_rate=2e-5,
@@ -69,8 +95,6 @@ def main():
         ddp_find_unused_parameters=False,
         fp16=False,
     )
-
-    # 额外 GRPO 参数
     setattr(training_args, 'reward_weights', [1.0])
     setattr(training_args, 'reward_scale', 1.0)
     setattr(training_args, 'model_init_kwargs', None)
@@ -85,101 +109,130 @@ def main():
 
     set_seed(42)
 
-    # 检查是否有 checkpoint
-    last_checkpoint = get_last_checkpoint(checkpoint_dir) if os.path.isdir(checkpoint_dir) else None
-    if last_checkpoint:
-        logger.info(f"Resuming training from checkpoint: {last_checkpoint}")
+    # 检查是否有 checkpoint（这里暂不使用 checkpoint）
+    last_checkpoint = None
+    # if os.path.isdir(checkpoint_dir):
+    #     last_checkpoint = get_last_checkpoint(checkpoint_dir)
+    # if last_checkpoint is not None:
+    #     logger.info(f"Checkpoint detected, resuming training at {last_checkpoint}.")
 
-    # 加载模型
+    # 设置日志级别
+    log_level = logging.INFO
+    logger.setLevel(log_level)
+    datasets.utils.logging.set_verbosity(log_level)
+    transformers.utils.logging.set_verbosity(log_level)
+    transformers.utils.logging.enable_default_handler()
+    transformers.utils.logging.enable_explicit_format()
+
+    # 定义预训练模型名称（LongT5 encoder-decoder）
     model_name = "google/long-t5-tglobal-large"
-    model_kwargs = {"torch_dtype": torch.bfloat16 if training_args.bf16 else torch.float32, "use_cache": False}
+    torch_dtype = torch.bfloat16 if training_args.bf16 else torch.float32
+    model_kwargs = {"torch_dtype": torch_dtype, "use_cache": False}
     
-    if last_checkpoint:
-        logger.info(f"Loading model from checkpoint: {last_checkpoint}")
-        model = AutoModelForSeq2SeqLM.from_pretrained(last_checkpoint, **model_kwargs)
-    else:
-        model = AutoModelForSeq2SeqLM.from_pretrained(model_name, **model_kwargs)
+    # 加载模型实例
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name, **model_kwargs)
+
+    # 如果需要，可以使用包装器（这里不一定需要）
+    model = T5Wrapper(model)
 
     # 加载 tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
 
-    # 加载数据集
+    # 加载数据集并过滤
     dataset = load_dataset("json", data_files={"train": "../data/train.json"})
     dataset = dataset.filter(lambda x: x["label"] == "refutes")
 
     def preprocess_function(examples):
-        prompt = f"""You are an expert in correcting erroneous sentences. 
-        Based on the following evidence, identify and correct errors in the original statement. 
-        Ensure that the corrected statement maintains the same meaning and structure as the original, only changing the parts that are incorrect.
-    
-        Evidence: {examples['evidence']}
-        Original statement: {examples['claim']}
+        prompt_template = """You are an expert in correcting erroneous sentences. Based on the following evidence, identify and correct errors in the original statement. Ensure that the corrected statement maintains the same meaning and structure as the original, only changing the parts that are incorrect.
+
+        Evidence: {evidence}
+        Original statement: {original_statement}
         Corrected statement: """
+        if not examples['evidence'] or not examples['claim']:
+            return {}
+        formatted_prompt = prompt_template.format(evidence=examples['evidence'], original_statement=examples['claim'])
+    
+        model_inputs = tokenizer(
+            formatted_prompt,
+            max_length=4096,
+            truncation="only_first",
+            padding="max_length",
+            return_tensors="pt"
+        )
+        # 将 prompt 存为字符串（用于后续生成和奖励计算）
+        model_inputs["prompt"] = formatted_prompt
 
-        inputs = tokenizer(prompt, max_length=4096, truncation=True, padding="max_length", return_tensors=None)
-        labels = tokenizer(examples["claim"], max_length=256, truncation=True, padding="max_length", return_tensors=None)
+        # 强制保证输入序列末尾为 EOS
+        eos_token_id = tokenizer.eos_token_id
+        if model_inputs["input_ids"][:, -1].item() != eos_token_id:
+            model_inputs["input_ids"][:, -1] = eos_token_id
 
-        # 处理 label 并右移（符合 T5 训练）
-        labels["input_ids"] = [
-            (l if l != tokenizer.pad_token_id else -100) for l in labels["input_ids"]
-        ]
+        return model_inputs
 
-        inputs["labels"] = labels["input_ids"]
-        return inputs
+    processed_dataset = dataset["train"].map(
+        preprocess_function,
+        remove_columns=[col for col in dataset["train"].column_names if col not in ["id", "evidence", "claim"]],
+        desc="Processing dataset",
+        keep_in_memory=True
+    )
 
-    processed_dataset = dataset["train"].map(preprocess_function, remove_columns=["id", "evidence", "claim"], desc="Processing dataset", keep_in_memory=True)
-
-    # 事实验证模块
+    # 初始化事实验证模块
     program_generator = Reasoning_Program_Generator()
     program_executor = Program_Execution()
 
-    # 奖励函数
+    # 定义奖励函数
     similarity_model = SentenceTransformer("sentence-transformers/paraphrase-MiniLM-L6-v2")
-
     def accuracy_reward(outputs, batch):
         rewards = []
         for output, sample in zip(outputs, batch):
             output_embedding = similarity_model.encode(output, convert_to_tensor=True)
             target_embedding = similarity_model.encode(sample["claim"], convert_to_tensor=True)
             similarity = float(torch.nn.functional.cosine_similarity(output_embedding, target_embedding, dim=0))
-
+            print(f"\nOutput: {output}\nSimilarity: {similarity}\n")
             if similarity < 0.7:
                 rewards.append(0.0)
                 continue
-
             programs = program_generator.generate_program(output)
-            sample_data = [{"idx": 0, "id": sample.get("id"), "claim": output, "gold": "", "predicted_programs": programs, "evidence": sample.get("evidence")}]
+            sample_data = [{
+                "idx": 0,
+                "id": sample.get("id"),
+                "claim": output,
+                "gold": "",
+                "predicted_programs": programs,
+                "evidence": sample.get("evidence")
+            }]
             prediction = program_executor.execute_on_dataset(sample_data)
-
+            print(f"\nPrograms: {programs}\nPrediction: {prediction}\n")
             rewards.append(1.0 if prediction else 0.0)
-
         return torch.tensor(rewards)
 
     reward_funcs = [accuracy_reward]
 
-    # GRPO 训练器
-    trainer = GRPOTrainer(
+    # 使用我们新定义的 GRPOSeq2SeqTrainer 来初始化训练器
+    trainer = GRPOSeq2SeqTrainer(
         model=model,
         reward_funcs=reward_funcs,
         args=training_args,
         train_dataset=processed_dataset,
+        processing_class=tokenizer,
     )
 
-    # 开始训练
     logger.info("*** Starting training ***")
     wandb.init(project="long-t5-tglobal-large-grpo", name=training_args.run_name)
     train_result = trainer.train(resume_from_checkpoint=last_checkpoint)
-
+    
     metrics = train_result.metrics
     metrics["train_samples"] = len(processed_dataset)
     trainer.log_metrics("train", metrics)
     trainer.save_metrics("train", metrics)
     trainer.save_state()
 
-    # 保存模型和 tokenizer
+    logger.info("*** Saving model ***")
     trainer.save_model(training_args.output_dir)
+    logger.info(f"Model saved to {training_args.output_dir}")
+
     tokenizer.save_pretrained(training_args.output_dir)
     wandb.finish()
 
