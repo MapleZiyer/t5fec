@@ -100,7 +100,7 @@ def main():
     setattr(training_args, 'model_init_kwargs', {})
     setattr(training_args, 'max_prompt_length', 4096)
     setattr(training_args, 'max_completion_length', 256)
-    setattr(training_args, 'num_generations', 1)
+    setattr(training_args, 'num_generations', 5)
     setattr(training_args, 'use_vllm', False)
     setattr(training_args, 'beta', 0.1)
     setattr(training_args, 'log_completions', False)
