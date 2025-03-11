@@ -192,9 +192,9 @@ def main():
         model_inputs = tokenizer(
             formatted_prompt,
             max_length=4096,
-            truncation='only_first',
+            truncation=True,
             padding='max_length',
-            return_tensors="pt"
+            return_tensors=None
         )
     
         # 这里将 prompt 字段设为原始格式的字符串
@@ -202,8 +202,8 @@ def main():
     
         # 确保末尾是 EOS
         eos_token_id = tokenizer.eos_token_id
-        if model_inputs["input_ids"][:, -1].item() != eos_token_id:
-            model_inputs["input_ids"][:, -1] = eos_token_id
+        if model_inputs["input_ids"][-1] != eos_token_id:
+            model_inputs["input_ids"][-1] = eos_token_id
     
         return model_inputs
 
