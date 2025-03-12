@@ -117,7 +117,7 @@ def main():
     torch_dtype = torch.bfloat16 if training_args.bf16 else torch.float32
     model_kwargs = dict(
         torch_dtype=torch_dtype,
-        use_cache=False if training_args.gradient_checkpointing else True
+        use_cache=False  # 始终禁用缓存以配合梯度检查点
     )
     
     # 加载模型实例（若有 checkpoint 则从 checkpoint 加载，否则从预训练模型加载）
@@ -128,9 +128,12 @@ def main():
         model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
     
     model.train()
+    model.config.use_cache = False  # 确保模型配置中也禁用了缓存
     # 确保模型参数可以计算梯度
     for param in model.parameters():
         param.requires_grad = True
+        if hasattr(param, 'data'):
+            param.data.requires_grad_(True)
 
     # 直接使用完整模型训练
 
@@ -178,15 +181,15 @@ def main():
         if 'attention_mask' not in model_inputs or len(model_inputs['attention_mask']) == 0:
             model_inputs['attention_mask'] = [1] * len(model_inputs['input_ids'])
 
-        # 确保输入数据维度正确
+        # 确保输入数据维度正确并设置requires_grad
         if isinstance(model_inputs['input_ids'], (list, torch.Tensor)):
-            model_inputs['input_ids'] = torch.tensor(model_inputs['input_ids'] if isinstance(model_inputs['input_ids'], list) else model_inputs['input_ids'].tolist())
+            model_inputs['input_ids'] = torch.tensor(model_inputs['input_ids'] if isinstance(model_inputs['input_ids'], list) else model_inputs['input_ids'].tolist(), requires_grad=True)
             # 添加批次维度
             if len(model_inputs['input_ids'].shape) == 1:
                 model_inputs['input_ids'] = model_inputs['input_ids'].unsqueeze(0)
 
         if isinstance(model_inputs['attention_mask'], (list, torch.Tensor)):
-            model_inputs['attention_mask'] = torch.tensor(model_inputs['attention_mask'] if isinstance(model_inputs['attention_mask'], list) else model_inputs['attention_mask'].tolist())
+            model_inputs['attention_mask'] = torch.tensor(model_inputs['attention_mask'] if isinstance(model_inputs['attention_mask'], list) else model_inputs['attention_mask'].tolist(), requires_grad=True)
             # 添加批次维度
             if len(model_inputs['attention_mask'].shape) == 1:
                 model_inputs['attention_mask'] = model_inputs['attention_mask'].unsqueeze(0)
@@ -215,13 +218,14 @@ def main():
         rewards = []
         for output, prompt in zip(completions, prompts):
             # 使用 sentence transformer 计算文本相似度作为奖励
-            output_embedding = similarity_model.encode(output, convert_to_tensor=True)
+            output_text = output if isinstance(output, str) else output.strip()
+            output_embedding = similarity_model.encode([output_text], convert_to_tensor=True, show_progress_bar=False)
             # 从prompt中提取原始声明和证据
             prompt_text = prompt.split('Original statement: ')[1].split('\n')[0].strip()
             evidence = prompt.split('Evidence: ')[1].split('\n')[0].strip()
             
-            target_embedding = similarity_model.encode(prompt_text, convert_to_tensor=True)
-            similarity = float(torch.nn.functional.cosine_similarity(output_embedding, target_embedding, dim=0))
+            target_embedding = similarity_model.encode([prompt_text], convert_to_tensor=True, show_progress_bar=False)
+            similarity = float(torch.nn.functional.cosine_similarity(output_embedding, target_embedding, dim=1))
             print(f"\nOutput: {output}\nSimilarity: {similarity}\n")
             if similarity < 0.7:
                 rewards.append(0.0)
@@ -243,7 +247,7 @@ def main():
                 rewards.append(1.0)
             else:
                 rewards.append(0.0)
-        return torch.tensor(rewards)
+        return torch.tensor(rewards, requires_grad=True)
 
     reward_funcs = [accuracy_reward]
 
