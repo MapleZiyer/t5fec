@@ -39,5 +39,5 @@
     "zero_allow_untested_optimizer": true,
     "zero_trust_src_size": true,
     "zero_reduce_scatter": true,
-    "zero_reduce_bucket_size": "auto"
+    "zero_reduce_bucket_size": 5e7
 }
