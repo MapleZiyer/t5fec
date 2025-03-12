@@ -185,9 +185,6 @@ def main():
         input_ids = torch.tensor(model_inputs["input_ids"], dtype=torch.long)
         attention_mask = torch.tensor(model_inputs["attention_mask"], dtype=torch.long)
         
-        input_ids.requires_grad_(True)
-        attention_mask.requires_grad_(True)
-        
         model_inputs["input_ids"] = input_ids
         model_inputs["attention_mask"] = attention_mask
         model_inputs['prompt'] = inputs
