@@ -131,6 +131,10 @@ def main():
     # 加载模型实例
     model = AutoModelForSeq2SeqLM.from_pretrained(model_name, **model_kwargs)
     model = T5Wrapper(model)
+    
+    # 确保模型参数可以计算梯度
+    for param in model.parameters():
+        param.requires_grad = True
 
     # 加载 tokenizer
     tokenizer = AutoTokenizer.from_pretrained(model_name)

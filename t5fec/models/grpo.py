@@ -117,6 +117,10 @@ def main():
     # 使用包装器包装模型，避免 logits_to_keep 参数问题
     model = T5Wrapper(model)
 
+    # 确保模型参数可以计算梯度
+    for param in model.parameters():
+        param.requires_grad = True
+
     # 加载分词器
     tokenizer = AutoTokenizer.from_pretrained(model_pretrained_name)
     tokenizer.pad_token = tokenizer.eos_token

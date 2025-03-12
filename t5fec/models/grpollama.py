@@ -126,6 +126,11 @@ def main():
         model = AutoModelForCausalLM.from_pretrained(last_checkpoint, **model_kwargs)
     else:
         model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
+    
+    model.train()
+    # 确保模型参数可以计算梯度
+    for param in model.parameters():
+        param.requires_grad = True
 
     # 直接使用完整模型训练
 
@@ -186,6 +191,8 @@ def main():
             if len(model_inputs['attention_mask'].shape) == 1:
                 model_inputs['attention_mask'] = model_inputs['attention_mask'].unsqueeze(0)
 
+
+        model_inputs["input_ids"].requires_grad_(True)
         # 添加prompt字段
         model_inputs['prompt'] = inputs
 
@@ -205,12 +212,16 @@ def main():
     
     # 定义奖励函数，并初始化 sentence transformer 模型
     similarity_model = SentenceTransformer('sentence-transformers/paraphrase-MiniLM-L6-v2')
-    def accuracy_reward(outputs, batch):
+    def accuracy_reward(prompts, completions, **kwargs):
         rewards = []
-        for output, sample in zip(outputs, batch):
+        for output, prompt in zip(completions, prompts):
             # 使用 sentence transformer 计算文本相似度作为奖励
             output_embedding = similarity_model.encode(output, convert_to_tensor=True)
-            target_embedding = similarity_model.encode(sample['claim'], convert_to_tensor=True)
+            # 从prompt中提取原始声明和证据
+            prompt_text = prompt.split('Original statement: ')[1].split('\n')[0].strip()
+            evidence = prompt.split('Evidence: ')[1].split('\n')[0].strip()
+            
+            target_embedding = similarity_model.encode(prompt_text, convert_to_tensor=True)
             similarity = float(torch.nn.functional.cosine_similarity(output_embedding, target_embedding, dim=0))
             print(f"\nOutput: {output}\nSimilarity: {similarity}\n")
             if similarity < 0.7:
@@ -221,11 +232,11 @@ def main():
             # 执行推理程序
             sample_data = [{
                 "idx": 0,
-                "id": sample['id'] if 'id' in sample else None,
+                "id": None,
                 "claim": output,
                 "gold": "",
                 "predicted_programs": programs,
-                "evidence": sample['evidence'] if 'evidence' in sample else None
+                "evidence": evidence
             }]
             prediction = program_executor.execute_on_dataset(sample_data)
             print(f"\nPrograms: {programs}\nPrediction: {prediction}\n")
