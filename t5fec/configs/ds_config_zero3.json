@@ -17,7 +17,7 @@
         "reduce_bucket_size": "auto",
         "stage3_prefetch_bucket_size": "auto",
         "stage3_param_persistence_threshold": "auto",
-        "sub_group_size": "auto",
+        "sub_group_size": 1e8,
         "stage3_max_live_parameters": "auto",
         "stage3_max_reuse_distance": "auto",
         "stage3_gather_16bit_weights_on_model_save": true
