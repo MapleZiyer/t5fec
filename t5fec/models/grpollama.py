@@ -192,7 +192,6 @@ def main():
                 model_inputs['attention_mask'] = model_inputs['attention_mask'].unsqueeze(0)
 
 
-        model_inputs["input_ids"].requires_grad_(True)
         # 添加prompt字段
         model_inputs['prompt'] = inputs
 
