@@ -205,6 +205,10 @@ def main():
     
     # 定义奖励函数，并初始化 sentence transformer 模型
     similarity_model = SentenceTransformer('sentence-transformers/paraphrase-MiniLM-L6-v2')
+    similarity_model.eval()  # 设置为评估模式
+    for param in similarity_model.parameters():
+        param.requires_grad = False  # 禁用梯度计算
+    
     def accuracy_reward(prompts, completions, **kwargs):
         rewards = []
         for output, prompt in zip(completions, prompts):
