@@ -9,7 +9,7 @@ import transformers
 from datasets import load_dataset
 from transformers import set_seed
 from transformers.trainer_utils import get_last_checkpoint
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from trl import GRPOTrainer, get_peft_config
 import wandb
@@ -123,9 +123,9 @@ def main():
     # 加载模型实例（若有 checkpoint 则从 checkpoint 加载，否则从预训练模型加载）
     if last_checkpoint is not None:
         logger.info(f"Loading model from checkpoint: {last_checkpoint}")
-        model = AutoModelForSeq2SeqLM.from_pretrained(last_checkpoint, **model_kwargs)
+        model = AutoModelForCausalLM.from_pretrained(last_checkpoint, **model_kwargs)
     else:
-        model = AutoModelForSeq2SeqLM.from_pretrained(model_name, **model_kwargs)
+        model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
 
     # 直接使用完整模型训练
 
