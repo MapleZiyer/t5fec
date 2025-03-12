@@ -181,9 +181,15 @@ def main():
             return_tensors=None
         )
 
-        model_inputs["input_ids"] = torch.tensor(model_inputs["input_ids"], dtype=torch.long)  # 确保 long
-        model_inputs["attention_mask"] = torch.tensor(model_inputs["attention_mask"], dtype=torch.long)
-
+        # 确保输入张量设置正确的requires_grad属性
+        input_ids = torch.tensor(model_inputs["input_ids"], dtype=torch.long)
+        attention_mask = torch.tensor(model_inputs["attention_mask"], dtype=torch.long)
+        
+        input_ids.requires_grad_(True)
+        attention_mask.requires_grad_(True)
+        
+        model_inputs["input_ids"] = input_ids
+        model_inputs["attention_mask"] = attention_mask
         model_inputs['prompt'] = inputs
 
         return model_inputs
@@ -205,7 +211,8 @@ def main():
     def accuracy_reward(prompts, completions, **kwargs):
         rewards = []
         for output, prompt in zip(completions, prompts):
-            output_text = output if isinstance(output, str) else output.strip()
+            output_text = output if isinstance(output, str) else str(output).strip()
+            # 确保输入文本是列表格式
             output_embedding = similarity_model.encode(
                 [output_text], 
                 convert_to_tensor=True, 
@@ -214,19 +221,29 @@ def main():
             prompt_text = prompt.split('Original statement: ')[1].split('\n')[0].strip()
             evidence = prompt.split('Evidence: ')[1].split('\n')[0].strip()
             
-            target_embedding = similarity_model.encode([prompt_text], convert_to_tensor=True, show_progress_bar=False)
-            similarity = float(torch.nn.functional.cosine_similarity(output_embedding, target_embedding, dim=1))
+            # 确保输入文本是列表格式
+            target_embedding = similarity_model.encode(
+                [prompt_text], 
+                convert_to_tensor=True, 
+                show_progress_bar=False
+            ).detach().to(dtype=torch.float32)
+            # 调整维度以匹配余弦相似度计算
+            similarity = float(torch.nn.functional.cosine_similarity(
+                output_embedding.squeeze(0), 
+                target_embedding.squeeze(0), 
+                dim=0
+            ))
             print(f"\nOutput: {output}\nSimilarity: {similarity}\n")
             if similarity < 0.7:
                 rewards.append(0.0)
                 continue
             # 使用事实验证模块评估生成文本
-            programs = program_generator.generate_program(output)
+            programs = program_generator.generate_program(output_text)
             # 执行推理程序
             sample_data = [{
                 "idx": 0,
                 "id": None,
-                "claim": output,
+                "claim": output_text,
                 "gold": "",
                 "predicted_programs": programs,
                 "evidence": evidence
