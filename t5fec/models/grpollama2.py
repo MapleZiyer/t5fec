@@ -147,11 +147,13 @@ def main():
     # 数据预处理函数
     # 在preprocess_function中使用更明确的日志格式
     def preprocess_function(examples):
-        prompt = """You are an expert in correcting erroneous sentences. Based on the following evidence, identify and correct errors in the original statement. Ensure that the corrected statement maintains the same meaning and structure as the original, only changing the parts that are incorrect.Do not output reasons, evidence or any irrelevant information, only output the modified sentence.Only output the modified sentence, nothing else!
-    
-        Evidence: {evidence}
-    
-        Original statement: {original_statement}
+        prompt = """Task:You are an expert in correcting erroneous sentences. Based on the following evidence, identify and correct errors in the original statement. Ensure that the corrected statement maintains the same meaning and structure as the original, only changing the parts that are incorrect.Do not output reasons, evidence or any irrelevant information, only output the modified sentence.Only output the modified sentence, nothing else!
+
+        Requirment:Do not output reasons, evidence or any irrelevant information, only output the modified sentence.Only output the modified sentence, nothing else!
+
+        Original statement: '{original_statement}'
+
+        Evidence: '{evidence}'
     
         Corrected statement: """
         inputs = prompt.format(evidence=examples['evidence'], original_statement=examples['claim'])
@@ -159,7 +161,7 @@ def main():
         if not inputs.strip():
             inputs = "No input provided."
             logger.warning("Empty input detected, using default input")
-        print(f"Input{inputs}")
+        print(f"Input:{inputs}")
         model_inputs = tokenizer(
             inputs,
             max_length=4096,

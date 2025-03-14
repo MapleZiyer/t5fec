@@ -10,7 +10,10 @@ openai.api_base = "https://api.bianxie.ai/v1"
 @backoff.on_exception(backoff.expo, (openai.OpenAIError, TimeoutError), max_tries=3)
 def completions_with_backoff(**kwargs):
     try:
-        return openai.completions.create(**kwargs)  # 使用新的 completions 接口
+        # 确保提供 'model' 和 'prompt' 参数
+        if 'model' not in kwargs or 'prompt' not in kwargs:
+            raise ValueError("Missing required arguments: 'model' and 'prompt' are required")
+        return openai.completions.create(**kwargs)
     except Exception as e:
         print(f"OpenAI API Error: {str(e)}")
         raise
@@ -18,7 +21,10 @@ def completions_with_backoff(**kwargs):
 @backoff.on_exception(backoff.expo, (openai.OpenAIError, TimeoutError), max_tries=3)
 def chat_completions_with_backoff(**kwargs):
     try:
-        return openai.completions.create(**kwargs)  # 使用新的 completions 接口
+        # 确保提供 'model' 和 'messages' 参数
+        if 'model' not in kwargs or 'messages' not in kwargs:
+            raise ValueError("Missing required arguments: 'model' and 'messages' are required")
+        return openai.completions.create(**kwargs)
     except Exception as e:
         print(f"OpenAI API Error: {str(e)}")
         raise
@@ -62,7 +68,7 @@ async def dispatch_openai_prompt_requests(
     async_responses = [
         openai.completions.acreate(  # 使用新的接口
             model=model,
-            prompt=x,
+            prompt=x,  # prompt 参数
             temperature=temperature,
             max_tokens=max_tokens,
             top_p=top_p,
@@ -86,7 +92,7 @@ class OpenAIModel:
     def chat_generate(self, input_string, temperature=0.0):
         response = chat_completions_with_backoff(
             model=self.model_name,
-            messages=[{"role": "user", "content": input_string}],
+            messages=[{"role": "user", "content": input_string}],  # 需要传递 'messages'
             max_tokens=self.max_new_tokens,
             temperature=temperature,
             top_p=1.0,
@@ -99,7 +105,7 @@ class OpenAIModel:
     def prompt_generate(self, input_string, temperature=0.0):
         response = completions_with_backoff(
             model=self.model_name,
-            prompt=input_string,
+            prompt=input_string,  # 需要传递 'prompt'
             max_tokens=self.max_new_tokens,
             temperature=temperature,
             top_p=1.0,
@@ -149,7 +155,7 @@ class OpenAIModel:
         response = completions_with_backoff(
             model=self.model_name,
             prompt=input_string,
-            suffix=suffix,
+            suffix=suffix,  # 需要传递 'suffix'
             temperature=temperature,
             max_tokens=self.max_new_tokens,
             top_p=1.0,
