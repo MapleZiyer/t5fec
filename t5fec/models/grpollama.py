@@ -205,9 +205,6 @@ def main():
     
     # 定义奖励函数，并初始化 sentence transformer 模型
     similarity_model = SentenceTransformer('sentence-transformers/paraphrase-MiniLM-L6-v2')
-    similarity_model.eval()  # 设置为评估模式
-    for param in similarity_model.parameters():
-        param.requires_grad = False  # 禁用梯度计算
     
     def accuracy_reward(prompts, completions, **kwargs):
         rewards = []
@@ -221,12 +218,14 @@ def main():
             print(f"prompt_text:{prompt_text}\n")
             print(f"evidence:{evidence}\n")
             print(f"type(output_text):{type(output_text)}\n")
+            print("Similarity Model:", similarity_model,'\n')
+            print("Embedding Weight Shape:", similarity_model[0].auto_model.embeddings.word_embeddings.weight.shape,'\n')
             # 编码文本并确保维度正确
             output_embedding = similarity_model.encode(
                 output_text, 
                 convert_to_tensor=True,
-                normalize_embeddings=True
-            ).detach().unsqueeze(0)  # 添加一个维度
+            )  # 添加一个维度
+            print("Embedding shape:", output_embedding,'\n')
             print(f"output_embedding1:{output_embedding}\n")
                 
             target_embedding = similarity_model.encode(
