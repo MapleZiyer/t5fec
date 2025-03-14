@@ -154,7 +154,7 @@ def main():
 
         Evidence: '{evidence}'
 
-        Modified statement:
+        Your output:
         """
         inputs = prompt.format(evidence=examples['evidence'], original_statement=examples['claim'])
 

@@ -85,6 +85,7 @@ class OpenAIModel:
 
     # used for chat-gpt and gpt-4
     def chat_generate(self, input_string, temperature = 0.0):
+        openai.api_base = "https://api.bianxie.ai/v1"
         response = chat_completions_with_backoff(
                 model = self.model_name,
                 messages=[
