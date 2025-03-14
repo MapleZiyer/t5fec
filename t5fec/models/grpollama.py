@@ -223,41 +223,33 @@ def main():
             print(f"type(output_text):{type(output_text)}\n")
             # 编码文本并确保维度正确
             output_embedding = similarity_model.encode(
-                [output_text], 
-                convert_to_tensor=True
-            )
+                output_text, 
+                convert_to_tensor=True,
+                normalize_embeddings=True
+            ).detach()
             print(f"output_embedding1:{output_embedding}\n")
                 
             target_embedding = similarity_model.encode(
-                [prompt_text], 
+                prompt_text, 
                 convert_to_tensor=True, 
                 show_progress_bar=False,
                 normalize_embeddings=True
             ).detach()
             print(f"target_embedding1:{target_embedding}\n")    
                 
-            # 确保张量类型一致
+            # 确保张量类型一致并保持二维结构
             output_embedding = output_embedding.to(dtype=torch.float32)
             target_embedding = target_embedding.to(dtype=torch.float32)
             
             print(f"output_embedding2:{output_embedding}\n")
             print(f"target_embedding2:{target_embedding}\n") 
                 
-            # 如果是二维张量，取平均值得到一维向量
-            if output_embedding.dim() > 1:
-                output_embedding = output_embedding.mean(dim=0)
-            if target_embedding.dim() > 1:
-                target_embedding = target_embedding.mean(dim=0)
-
-            print(f"output_embedding3:{output_embedding}\n")
-            print(f"target_embedding3:{target_embedding}\n")     
-                
-            # 计算余弦相似度
+            # 计算余弦相似度，直接使用二维张量
             similarity = float(torch.nn.functional.cosine_similarity(
-                output_embedding.unsqueeze(0),
-                target_embedding.unsqueeze(0),
+                output_embedding,
+                target_embedding,
                 dim=1
-            ))
+            ).mean())
             print(f"\nOutput: {output}\nSimilarity: {similarity}\n")
             if similarity < 0.7:
                 rewards.append(0.0)
