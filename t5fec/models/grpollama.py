@@ -159,7 +159,7 @@ def main():
     # 数据预处理函数
     # 在preprocess_function中使用更明确的日志格式
     def preprocess_function(examples):
-        prompt = """You are an expert in correcting erroneous sentences. Based on the following evidence, identify and correct errors in the original statement. Ensure that the corrected statement maintains the same meaning and structure as the original, only changing the parts that are incorrect.
+        prompt = """You are an expert in correcting erroneous sentences. Based on the following evidence, identify and correct errors in the original statement. Ensure that the corrected statement maintains the same meaning and structure as the original, only changing the parts that are incorrect.Do not output reasons or any irrelevant information, only output the modified sentence.
     
         Evidence: {evidence}
     
@@ -215,7 +215,6 @@ def main():
             print(f"output1:{output}\n")
             output_text = output if isinstance(output, str) else str(output).strip()
             print(f"output2:{output_text}\n")
-            # 确保输入文本格式正确
             # 确保输入文本格式正确并提取相关文本
             prompt_text = prompt.split('Original statement: ')[1].split('\n')[0].strip()
             evidence = prompt.split('Evidence: ')[1].split('\n')[0].strip()
@@ -225,10 +224,8 @@ def main():
             # 编码文本并确保维度正确
             output_embedding = similarity_model.encode(
                 output_text, 
-                convert_to_tensor=True, 
-                show_progress_bar=False,
-                normalize_embeddings=True
-            ).detach()
+                convert_to_tensor=True
+            )
             print(f"output_embedding1:{output_embedding}\n")
                 
             target_embedding = similarity_model.encode(
