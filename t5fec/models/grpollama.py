@@ -212,36 +212,55 @@ def main():
     def accuracy_reward(prompts, completions, **kwargs):
         rewards = []
         for output, prompt in zip(completions, prompts):
-            try:
-                output_text = output if isinstance(output, str) else str(output).strip()
-                # 确保输入文本格式正确
-                output_embedding = similarity_model.encode(
-                    output_text, 
-                    convert_to_tensor=True, 
-                    show_progress_bar=False,
-                    normalize_embeddings=True
-                ).detach().to(dtype=torch.float32)  # 确保正确数据类型
-                prompt_text = prompt.split('Original statement: ')[1].split('\n')[0].strip()
-                evidence = prompt.split('Evidence: ')[1].split('\n')[0].strip()
+            print(f"output1:{output}\n")
+            output_text = output if isinstance(output, str) else str(output).strip()
+            print(f"output2:{output_text}\n")
+            # 确保输入文本格式正确
+            # 确保输入文本格式正确并提取相关文本
+            prompt_text = prompt.split('Original statement: ')[1].split('\n')[0].strip()
+            evidence = prompt.split('Evidence: ')[1].split('\n')[0].strip()
+            print(f"prompt_text:{prompt_text}\n")
+            print(f"evidence:{evidence}\n")
                 
-                # 确保输入文本格式正确
-                target_embedding = similarity_model.encode(
-                    prompt_text, 
-                    convert_to_tensor=True, 
-                    show_progress_bar=False,
-                    normalize_embeddings=True
-                ).detach().to(dtype=torch.float32)
-                # 调整维度以匹配余弦相似度计算
-                output_embedding = output_embedding.mean(dim=0) if output_embedding.dim() > 1 else output_embedding
-                target_embedding = target_embedding.mean(dim=0) if target_embedding.dim() > 1 else target_embedding
-                similarity = float(torch.nn.functional.cosine_similarity(
-                    output_embedding.unsqueeze(0), 
-                    target_embedding.unsqueeze(0), 
-                    dim=1
-                ))
-            except Exception as e:
-                print(f"Error in computing similarity: {e}")
-                similarity = 0.0
+            # 编码文本并确保维度正确
+            output_embedding = similarity_model.encode(
+                output_text, 
+                convert_to_tensor=True, 
+                show_progress_bar=False,
+                normalize_embeddings=True
+            ).detach()
+            print(f"output_embedding1:{output_embedding}\n")
+                
+            target_embedding = similarity_model.encode(
+                prompt_text, 
+                convert_to_tensor=True, 
+                show_progress_bar=False,
+                normalize_embeddings=True
+            ).detach()
+            print(f"target_embedding1:{target_embedding}\n")    
+                
+            # 确保张量类型一致
+            output_embedding = output_embedding.to(dtype=torch.float32)
+            target_embedding = target_embedding.to(dtype=torch.float32)
+            
+            print(f"output_embedding2:{output_embedding}\n")
+            print(f"target_embedding2:{target_embedding}\n") 
+                
+            # 如果是二维张量，取平均值得到一维向量
+            if output_embedding.dim() > 1:
+                output_embedding = output_embedding.mean(dim=0)
+            if target_embedding.dim() > 1:
+                target_embedding = target_embedding.mean(dim=0)
+
+            print(f"output_embedding3:{output_embedding}\n")
+            print(f"target_embedding3:{target_embedding}\n")     
+                
+            # 计算余弦相似度
+            similarity = float(torch.nn.functional.cosine_similarity(
+                output_embedding.unsqueeze(0),
+                target_embedding.unsqueeze(0),
+                dim=1
+            ))
             print(f"\nOutput: {output}\nSimilarity: {similarity}\n")
             if similarity < 0.7:
                 rewards.append(0.0)
