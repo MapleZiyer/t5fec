@@ -153,15 +153,12 @@ def main():
 
         Original statement: '{original_statement}'
 
-        Evidence: '{evidence}'
-    
-        Corrected statement: """
+        Evidence: '{evidence}'"""
         inputs = prompt.format(evidence=examples['evidence'], original_statement=examples['claim'])
 
         if not inputs.strip():
             inputs = "No input provided."
             logger.warning("Empty input detected, using default input")
-        print(f"Input:{inputs}")
         model_inputs = tokenizer(
             inputs,
             max_length=4096,
