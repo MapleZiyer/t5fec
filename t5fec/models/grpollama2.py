@@ -51,7 +51,7 @@ def main():
         output_dir="../checkpoints/llama-3.2-1b-instruct-grpo",
         learning_rate=2e-5,
         num_train_epochs=1,
-        per_device_train_batch_size=2,  # 减小batch size以适应单GPU
+        per_device_train_batch_size=1,  # 减小batch size以适应单GPU
         gradient_accumulation_steps=16,  # 增加梯度累积步数以保持等效batch size
         gradient_checkpointing=True,
         bf16=True,
