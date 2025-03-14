@@ -132,17 +132,6 @@ def main():
     
     # 确保模型处于训练模式
     model.train()
-    
-    # 显式设置requires_grad
-    def set_requires_grad(module):
-        for param in module.parameters():
-            param.requires_grad = True
-            if hasattr(param, 'data'):
-                param.data.requires_grad_(True)
-    
-    model.apply(set_requires_grad)
-
-    # 直接使用完整模型训练
 
     # 加载分词器（使用预训练模型名称）
     tokenizer = AutoTokenizer.from_pretrained(model_name)
@@ -205,21 +194,15 @@ def main():
     program_executor = Program_Execution()
     
     # 定义奖励函数，并初始化 sentence transformer 模型
+    # 在每个进程上都加载模型
+    similarity_model = SentenceTransformer('sentence-transformers/paraphrase-MiniLM-L6-v2').cuda()
+    
+    # 如果是分布式训练，确保所有进程的模型参数一致
     if dist.is_initialized():
-        if dist.get_rank() == 0:
-            similarity_model = SentenceTransformer('sentence-transformers/paraphrase-MiniLM-L6-v2').cuda()
-        else:
-            similarity_model = None  # 其他 rank 进程不加载模型
-        dist.barrier()  # 让所有进程同步
-
-        if dist.get_rank() == 0:
-            # 把模型广播给其他进程
-            for param in similarity_model.parameters():
-                dist.broadcast(param.data, src=0)
-
-    # 确保所有进程都能访问 similarity_model
-    if similarity_model is None:
-        similarity_model = SentenceTransformer('sentence-transformers/paraphrase-MiniLM-L6-v2').cuda()
+        # 使用rank 0的参数作为基准
+        for param in similarity_model.parameters():
+            dist.broadcast(param.data, src=0)
+        dist.barrier()  # 确保所有进程同步
     
     def accuracy_reward(prompts, completions, **kwargs):
         rewards = []
