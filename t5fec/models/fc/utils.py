@@ -18,7 +18,7 @@ def completions_with_backoff(**kwargs):
 @backoff.on_exception(backoff.expo, (openai.OpenAIError, TimeoutError), max_tries=3)
 def chat_completions_with_backoff(**kwargs):
     try:
-        return openai.completions.create(**kwargs, timeout=30)
+        return openai.chat.completions.create(**kwargs, timeout=30)
     except Exception as e:
         print(f"OpenAI API Error: {str(e)}")
         raise
@@ -33,7 +33,7 @@ async def dispatch_openai_chat_requests(
 ) -> list[str]:
     try:
         async_responses = [
-            openai.completions.acreate(
+            openai.chat.completions.acreate(
                 model=model,
                 messages=x,
                 temperature=temperature,

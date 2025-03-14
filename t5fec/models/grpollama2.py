@@ -50,8 +50,8 @@ def main():
         output_dir="../checkpoints/llama-3.2-1b-instruct-grpo",
         learning_rate=2e-5,
         num_train_epochs=1,
-        per_device_train_batch_size=4,  # 适合单GPU的batch size
-        gradient_accumulation_steps=8,  # 调整梯度累积步数
+        per_device_train_batch_size=2,  # 适合单GPU的batch size
+        gradient_accumulation_steps=16,  # 调整梯度累积步数
         gradient_checkpointing=True,
         bf16=True,
         logging_steps=10,
@@ -73,7 +73,7 @@ def main():
     # 添加 max_completion_length 参数
     setattr(training_args, 'max_completion_length', 256)
     # 添加 num_generations 参数
-    setattr(training_args, 'num_generations', 2)  # 将生成数量设置为2以匹配训练批次大小
+    setattr(training_args, 'num_generations', 1)  # 将生成数量设置为1
     # 添加 temperature 参数
     setattr(training_args, 'temperature', 0.7)  # 降低temperature以减少随机性
     # 添加 use_vllm 参数
