@@ -207,47 +207,42 @@ def main():
     # 定义奖励函数，并初始化 sentence transformer 模型
     if dist.is_initialized():
         if dist.get_rank() == 0:
-            similarity_model = SentenceTransformer('sentence-transformers/paraphrase-MiniLM-L6-v2')  # 只在 rank 0 加载
+            similarity_model = SentenceTransformer('sentence-transformers/paraphrase-MiniLM-L6-v2').cuda()
         else:
-            similarity_model = None
-        dist.barrier()
-        similarity_model = torch.nn.parallel.DistributedDataParallel(similarity_model)
+            similarity_model = None  # 其他 rank 进程不加载模型
+        dist.barrier()  # 让所有进程同步
+
+        if dist.get_rank() == 0:
+            # 把模型广播给其他进程
+            for param in similarity_model.parameters():
+                dist.broadcast(param.data, src=0)
+
+    # 确保所有进程都能访问 similarity_model
+    if similarity_model is None:
+        similarity_model = SentenceTransformer('sentence-transformers/paraphrase-MiniLM-L6-v2').cuda()
     
     def accuracy_reward(prompts, completions, **kwargs):
         rewards = []
         for output, prompt in zip(completions, prompts):
-            print(f"output1:{output}\n")
             output_text = output if isinstance(output, str) else str(output).strip()
-            print(f"output2:{output_text}\n")
-            # 确保输入文本格式正确并提取相关文本
             prompt_text = prompt.split('Original statement: ')[1].split('\n')[0].strip()
             evidence = prompt.split('Evidence: ')[1].split('\n')[0].strip()
-            print(f"prompt_text:{prompt_text}\n")
-            print(f"evidence:{evidence}\n")
-            print(f"type(output_text):{type(output_text)}\n")
             print("Similarity Model:", similarity_model,'\n')
             print("Embedding Weight Shape:", similarity_model[0].auto_model.embeddings.word_embeddings.weight.shape,'\n')
             # 编码文本并确保维度正确
             output_embedding = similarity_model.encode(
                 output_text, 
                 convert_to_tensor=True,
-            )  # 添加一个维度
+            ).cuda()
             print("Embedding shape:", output_embedding,'\n')
             print(f"output_embedding1:{output_embedding}\n")
                 
             target_embedding = similarity_model.encode(
                 prompt_text, 
                 convert_to_tensor=True, 
-            )  # 添加一个维度
+            ).cuda()
             print(f"target_embedding1:{target_embedding}\n")    
-                
-            # 确保张量类型一致并保持二维结构
-            output_embedding = output_embedding.to(dtype=torch.float32)
-            target_embedding = target_embedding.to(dtype=torch.float32)
-            
-            print(f"output_embedding2:{output_embedding}\n")
-            print(f"target_embedding2:{target_embedding}\n") 
-                
+
             # 计算余弦相似度，直接使用二维张量
             similarity = float(torch.nn.functional.cosine_similarity(output_embedding, target_embedding, dim=0))
             print(f"\nOutput: {output}\nSimilarity: {similarity}\n")
