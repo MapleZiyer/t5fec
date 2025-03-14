@@ -1,3 +1,8 @@
+import openai
+import backoff
+import asyncio
+from typing import Any
+
 @backoff.on_exception(backoff.expo, openai.OpenAIError)
 @backoff.on_exception(backoff.expo, (openai.OpenAIError, TimeoutError), max_tries=3)
 def completions_with_backoff(**kwargs):
@@ -5,7 +10,7 @@ def completions_with_backoff(**kwargs):
         # 确保提供 'model' 和 'prompt' 参数
         if 'model' not in kwargs or 'prompt' not in kwargs:
             raise ValueError("Missing required arguments: 'model' and 'prompt' are required")
-        return openai.completions.create(**kwargs)
+        return openai.Completion.create(**kwargs)  # 使用 Completion.create 而非 completions.create
     except Exception as e:
         print(f"OpenAI API Error: {str(e)}")
         raise
@@ -16,7 +21,7 @@ def chat_completions_with_backoff(**kwargs):
         # 确保提供 'model' 和 'messages' 参数
         if 'model' not in kwargs or 'messages' not in kwargs:
             raise ValueError("Missing required arguments: 'model' and 'messages' are required")
-        return openai.completions.create(**kwargs)  # 使用 openai.completions.create 来替代 ChatCompletion.create
+        return openai.ChatCompletion.create(**kwargs)  # 使用 ChatCompletion.create 而非 completions.create
     except Exception as e:
         print(f"OpenAI API Error: {str(e)}")
         raise
@@ -31,9 +36,9 @@ async def dispatch_openai_chat_requests(
 ) -> list[str]:
     try:
         async_responses = [
-            openai.completions.acreate(  # 使用新的接口
+            openai.ChatCompletion.acreate(  # 使用新的接口 acreate
                 model=model,
-                prompt=x,  # 在新的接口中，应该使用 'prompt' 参数来传递消息内容
+                messages=x,  # 'messages' 参数
                 temperature=temperature,
                 max_tokens=max_tokens,
                 top_p=top_p,
@@ -58,9 +63,9 @@ async def dispatch_openai_prompt_requests(
     stop_words: list[str]
 ) -> list[str]:
     async_responses = [
-        openai.completions.acreate(  # 使用新的接口
+        openai.Completion.acreate(  # 使用新的接口 acreate
             model=model,
-            prompt=x,  # prompt 参数
+            prompt=x,  # 'prompt' 参数
             temperature=temperature,
             max_tokens=max_tokens,
             top_p=top_p,
@@ -75,7 +80,7 @@ async def dispatch_openai_prompt_requests(
 class OpenAIModel:
     def __init__(self, API_KEY, model_name, stop_words, max_new_tokens) -> None:
         openai.api_key = API_KEY
-        openai.api_base = "https://api.bianxie.ai/v1"
+        openai.api_base = "https://api.openai.com/v1"  # 如果有其他API域名，可以修改
         self.model_name = model_name
         self.max_new_tokens = max_new_tokens
         self.stop_words = stop_words
