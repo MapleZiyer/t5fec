@@ -2,7 +2,6 @@ import logging
 import os
 import sys
 from dataclasses import dataclass, field
-import torch.distributed as dist
 import datasets
 import torch
 import transformers
@@ -74,7 +73,7 @@ def main():
     # 添加 max_completion_length 参数
     setattr(training_args, 'max_completion_length', 256)
     # 添加 num_generations 参数
-    setattr(training_args, 'num_generations', 1)  # 将生成数量从2减少到1
+    setattr(training_args, 'num_generations', 2)  # 将生成数量设置为2以匹配训练批次大小
     # 添加 temperature 参数
     setattr(training_args, 'temperature', 0.7)  # 降低temperature以减少随机性
     # 添加 use_vllm 参数
