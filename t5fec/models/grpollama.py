@@ -226,7 +226,7 @@ def main():
                 output_text, 
                 convert_to_tensor=True,
                 normalize_embeddings=True
-            ).detach()
+            ).detach().unsqueeze(0)  # 添加一个维度
             print(f"output_embedding1:{output_embedding}\n")
                 
             target_embedding = similarity_model.encode(
@@ -234,7 +234,7 @@ def main():
                 convert_to_tensor=True, 
                 show_progress_bar=False,
                 normalize_embeddings=True
-            ).detach()
+            ).detach().unsqueeze(0)  # 添加一个维度
             print(f"target_embedding1:{target_embedding}\n")    
                 
             # 确保张量类型一致并保持二维结构
