@@ -147,7 +147,7 @@ def main():
     # 数据预处理函数
     # 在preprocess_function中使用更明确的日志格式
     def preprocess_function(examples):
-        prompt = """You are an expert in correcting erroneous sentences. Based on the following evidence, identify and correct errors in the original statement. Ensure that the corrected statement maintains the same meaning and structure as the original, only changing the parts that are incorrect.Do not output reasons or any irrelevant information, only output the modified sentence.Only output the modified sentence, nothing else!Only output the modified sentence, nothing else!Only output the modified sentence, nothing else!
+        prompt = """You are an expert in correcting erroneous sentences. Based on the following evidence, identify and correct errors in the original statement. Ensure that the corrected statement maintains the same meaning and structure as the original, only changing the parts that are incorrect.Do not output reasons, evidence or any irrelevant information, only output the modified sentence.Only output the modified sentence, nothing else!
     
         Evidence: {evidence}
     
@@ -219,8 +219,8 @@ def main():
 
             # 计算余弦相似度，直接使用二维张量
             similarity = float(torch.nn.functional.cosine_similarity(output_embedding, target_embedding, dim=0))
-            print(f"\nOutput: {output}\nSimilarity: {similarity}\n")
-            if similarity < 0.7:
+            print(f"Similarity: {similarity}\n")
+            if similarity < 0.8:
                 rewards.append(0.0)
                 continue
             # 使用事实验证模块评估生成文本
