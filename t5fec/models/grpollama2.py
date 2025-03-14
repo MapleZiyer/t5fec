@@ -51,8 +51,8 @@ def main():
         output_dir="../checkpoints/llama-3.2-1b-instruct-grpo",
         learning_rate=2e-5,
         num_train_epochs=1,
-        per_device_train_batch_size=1,  # 减小batch size以适应单GPU
-        gradient_accumulation_steps=16,  # 增加梯度累积步数以保持等效batch size
+        per_device_train_batch_size=4,  # 适合单GPU的batch size
+        gradient_accumulation_steps=8,  # 调整梯度累积步数
         gradient_checkpointing=True,
         bf16=True,
         logging_steps=10,
@@ -63,9 +63,6 @@ def main():
         remove_unused_columns=False,
         report_to=["wandb"],
         run_name="llama-3.2-1b-instruct-grpo-run",
-        local_rank=-1,
-        ddp_find_unused_parameters=False,
-        fp16=False,
     )
     # 添加reward_weights参数
     setattr(training_args, 'reward_weights', [1.0])
