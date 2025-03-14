@@ -2,7 +2,7 @@ import logging
 import os
 import sys
 from dataclasses import dataclass, field
-
+import torch.distributed as dist
 import datasets
 import torch
 import transformers
@@ -90,6 +90,7 @@ def main():
     setattr(training_args, 'temperature', 0.7)
     # 添加 sync_ref_model 参数
     setattr(training_args, 'sync_ref_model', True)
+    setattr(training_args, 'use_cache', False)
 
     # 设置随机种子
     set_seed(42)
@@ -204,7 +205,13 @@ def main():
     program_executor = Program_Execution()
     
     # 定义奖励函数，并初始化 sentence transformer 模型
-    similarity_model = SentenceTransformer('sentence-transformers/paraphrase-MiniLM-L6-v2')
+    if dist.is_initialized():
+        if dist.get_rank() == 0:
+            similarity_model = SentenceTransformer('sentence-transformers/paraphrase-MiniLM-L6-v2')  # 只在 rank 0 加载
+        else:
+            similarity_model = None
+        dist.barrier()
+        similarity_model = torch.nn.parallel.DistributedDataParallel(similarity_model)
     
     def accuracy_reward(prompts, completions, **kwargs):
         rewards = []
@@ -231,9 +238,7 @@ def main():
             target_embedding = similarity_model.encode(
                 prompt_text, 
                 convert_to_tensor=True, 
-                show_progress_bar=False,
-                normalize_embeddings=True
-            ).detach().unsqueeze(0)  # 添加一个维度
+            )  # 添加一个维度
             print(f"target_embedding1:{target_embedding}\n")    
                 
             # 确保张量类型一致并保持二维结构
@@ -244,11 +249,7 @@ def main():
             print(f"target_embedding2:{target_embedding}\n") 
                 
             # 计算余弦相似度，直接使用二维张量
-            similarity = float(torch.nn.functional.cosine_similarity(
-                output_embedding,
-                target_embedding,
-                dim=1
-            ).mean())
+            similarity = float(torch.nn.functional.cosine_similarity(output_embedding, target_embedding, dim=0))
             print(f"\nOutput: {output}\nSimilarity: {similarity}\n")
             if similarity < 0.7:
                 rewards.append(0.0)
