@@ -73,7 +73,7 @@ def main():
     # 添加 max_completion_length 参数
     setattr(training_args, 'max_completion_length', 256)
     # 添加 num_generations 参数
-    setattr(training_args, 'num_generations', 1)  # 将生成数量设置为1
+    setattr(training_args, 'num_generations', 2)  # 将生成数量设置为1
     # 添加 temperature 参数
     setattr(training_args, 'temperature', 0.7)  # 降低temperature以减少随机性
     # 添加 use_vllm 参数
@@ -213,9 +213,9 @@ def main():
                 convert_to_tensor=True, 
                 device='cuda'
             )
-            print(f"Prompt:\n{prompt}\n")
-            print(f"Model Output:\n{output_text}\n")
-            print(f"\nOrginal:{prompt_text}\n")
+
+            print(f"Model Output:\n{output_text}\n\n")
+            print(f"\nOrginal:{prompt_text}\n\n")
 
             # 计算余弦相似度，直接使用二维张量
             similarity = float(torch.nn.functional.cosine_similarity(output_embedding, target_embedding, dim=0))
