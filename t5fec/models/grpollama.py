@@ -223,13 +223,13 @@ def main():
             print(f"type(output_text):{type(output_text)}\n")
             # 编码文本并确保维度正确
             output_embedding = similarity_model.encode(
-                output_text, 
+                [output_text], 
                 convert_to_tensor=True
             )
             print(f"output_embedding1:{output_embedding}\n")
                 
             target_embedding = similarity_model.encode(
-                prompt_text, 
+                [prompt_text], 
                 convert_to_tensor=True, 
                 show_progress_bar=False,
                 normalize_embeddings=True
