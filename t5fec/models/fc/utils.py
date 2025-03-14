@@ -10,7 +10,7 @@ openai.api_base = "https://api.bianxie.ai/v1"
 @backoff.on_exception(backoff.expo, (openai.OpenAIError, TimeoutError), max_tries=3)
 def completions_with_backoff(**kwargs):
     try:
-        return openai.Completion.create(**kwargs)
+        return openai.completions.create(**kwargs)  # 使用新的 completions 接口
     except Exception as e:
         print(f"OpenAI API Error: {str(e)}")
         raise
@@ -18,7 +18,7 @@ def completions_with_backoff(**kwargs):
 @backoff.on_exception(backoff.expo, (openai.OpenAIError, TimeoutError), max_tries=3)
 def chat_completions_with_backoff(**kwargs):
     try:
-        return openai.ChatCompletion.create(**kwargs)
+        return openai.completions.create(**kwargs)  # 使用新的 completions 接口
     except Exception as e:
         print(f"OpenAI API Error: {str(e)}")
         raise
@@ -33,7 +33,7 @@ async def dispatch_openai_chat_requests(
 ) -> list[str]:
     try:
         async_responses = [
-            openai.ChatCompletion.acreate(
+            openai.completions.acreate(  # 使用新的接口
                 model=model,
                 messages=x,
                 temperature=temperature,
@@ -60,7 +60,7 @@ async def dispatch_openai_prompt_requests(
     stop_words: list[str]
 ) -> list[str]:
     async_responses = [
-        openai.Completion.acreate(
+        openai.completions.acreate(  # 使用新的接口
             model=model,
             prompt=x,
             temperature=temperature,

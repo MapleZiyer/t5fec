@@ -155,12 +155,11 @@ def main():
     
         Corrected statement: """
         inputs = prompt.format(evidence=examples['evidence'], original_statement=examples['claim'])
-        # 使用更明确的日志格式
 
         if not inputs.strip():
             inputs = "No input provided."
             logger.warning("Empty input detected, using default input")
-    
+        print(f"Input{inputs}")
         model_inputs = tokenizer(
             inputs,
             max_length=4096,
