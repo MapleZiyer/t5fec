@@ -194,9 +194,33 @@ def main():
     program_executor = Program_Execution()
     
     # 定义奖励函数，并初始化 sentence transformer 模型
-    # 在每个进程上都加载模型
-    similarity_model = SentenceTransformer('sentence-transformers/paraphrase-MiniLM-L6-v2').cuda()
+    similarity_model = SentenceTransformer('sentence-transformers/paraphrase-MiniLM-L6-v2')
+    similarity_model = similarity_model.to('cuda')
+    similarity_model.eval()
     
+    # 如果是分布式训练，确保所有进程的模型参数一致
+    if dist.is_initialized():
+        # 使用rank 0的参数作为基准
+        for param in similarity_model.parameters():
+            if param.data.dim() == 0:
+                param.data = param.data.unsqueeze(0)
+            dist.broadcast(param.data, src=0)
+        dist.barrier()  # 确保所有进程同步
+        
+    # 如果是分布式训练，确保所有进程的模型参数一致
+    if dist.is_initialized():
+        # 使用rank 0的参数作为基准
+        for param in similarity_model.parameters():
+            dist.broadcast(param.data, src=0)
+        dist.barrier()  # 确保所有进程同步
+    
+    # 如果是分布式训练，确保所有进程的模型参数一致
+    if dist.is_initialized():
+        # 使用rank 0的参数作为基准
+        for param in similarity_model.parameters():
+            dist.broadcast(param.data, src=0)
+        dist.barrier()  # 确保所有进程同步
+        
     # 如果是分布式训练，确保所有进程的模型参数一致
     if dist.is_initialized():
         # 使用rank 0的参数作为基准
@@ -211,19 +235,26 @@ def main():
             prompt_text = prompt.split('Original statement: ')[1].split('\n')[0].strip()
             evidence = prompt.split('Evidence: ')[1].split('\n')[0].strip()
             print("Similarity Model:", similarity_model,'\n')
-            print("Embedding Weight Shape:", similarity_model[0].auto_model.embeddings.word_embeddings.weight.shape,'\n')
+            print("Embedding Weight Shape:", similarity_model[0].auto_model.embeddings.word_embeddings.weight.shape, '\n')
+            # 编码文本并确保维度正确
+            print("Similarity Model:", similarity_model,'\n')
+            print("Embedding Weight Shape:", similarity_model[0].auto_model.embeddings.word_embeddings.weight.shape, '\n')
             # 编码文本并确保维度正确
             output_embedding = similarity_model.encode(
                 output_text, 
                 convert_to_tensor=True,
-            ).cuda()
+                device='cuda'
+            )
+            print("Embedding shape:", output_embedding,'\n')
+            print(f"output_embedding1:{output_embedding}\n")
             print("Embedding shape:", output_embedding,'\n')
             print(f"output_embedding1:{output_embedding}\n")
                 
             target_embedding = similarity_model.encode(
                 prompt_text, 
                 convert_to_tensor=True, 
-            ).cuda()
+                device='cuda'
+            )
             print(f"target_embedding1:{target_embedding}\n")    
 
             # 计算余弦相似度，直接使用二维张量
