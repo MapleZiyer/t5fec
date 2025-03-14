@@ -159,7 +159,7 @@ def main():
     # 数据预处理函数
     # 在preprocess_function中使用更明确的日志格式
     def preprocess_function(examples):
-        prompt = """You are an expert in correcting erroneous sentences. Based on the following evidence, identify and correct errors in the original statement. Ensure that the corrected statement maintains the same meaning and structure as the original, only changing the parts that are incorrect.Do not output reasons or any irrelevant information, only output the modified sentence.
+        prompt = """You are an expert in correcting erroneous sentences. Based on the following evidence, identify and correct errors in the original statement. Ensure that the corrected statement maintains the same meaning and structure as the original, only changing the parts that are incorrect.Do not output reasons or any irrelevant information, only output the modified sentence.Only output the modified sentence, nothing else!
     
         Evidence: {evidence}
     
@@ -220,7 +220,7 @@ def main():
             evidence = prompt.split('Evidence: ')[1].split('\n')[0].strip()
             print(f"prompt_text:{prompt_text}\n")
             print(f"evidence:{evidence}\n")
-                
+            print(f"type(output_text):{type(output_text)}\n")
             # 编码文本并确保维度正确
             output_embedding = similarity_model.encode(
                 output_text, 
