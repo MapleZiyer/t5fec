@@ -77,7 +77,9 @@ def main():
     # 添加 max_completion_length 参数
     setattr(training_args, 'max_completion_length', 256)
     # 添加 num_generations 参数
-    setattr(training_args, 'num_generations', 2)  # 设置每个样本生成2个候选答案，以匹配全局训练批次大小
+    setattr(training_args, 'num_generations', 1)  # 将生成数量从2减少到1
+    # 添加 temperature 参数
+    setattr(training_args, 'temperature', 0.7)  # 降低temperature以减少随机性
     # 添加 use_vllm 参数
     setattr(training_args, 'use_vllm', False)
     # 添加 beta 参数
@@ -147,13 +149,15 @@ def main():
     # 数据预处理函数
     # 在preprocess_function中使用更明确的日志格式
     def preprocess_function(examples):
-        prompt = """Task:'You are an expert in correcting' erroneous sentences. Based on the following evidence, identify and correct errors in the original statement. Ensure that the corrected statement maintains the same meaning and structure as the original, only changing the parts that are incorrect.Do not output reasons, evidence or any irrelevant information, only output the modified sentence.Only output the modified sentence, nothing else!'
+        prompt = """
+        Task:'You are an expert in correcting' erroneous sentences. Based on the following evidence, identify and correct errors in the original statement. Ensure that the corrected statement maintains the same meaning and structure as the original, only changing the parts that are incorrect.Do not output reasons, evidence or any irrelevant information, only output the modified sentence.Only output the modified sentence, nothing else!'
 
         Requirment:'Do not output reasons, evidence or any irrelevant information, only output the modified sentence.Only output the modified sentence, nothing else!'
 
         Original statement: '{original_statement}'
 
-        Evidence: '{evidence}'"""
+        Evidence: '{evidence}'
+        """
         inputs = prompt.format(evidence=examples['evidence'], original_statement=examples['claim'])
 
         if not inputs.strip():
@@ -211,9 +215,9 @@ def main():
                 convert_to_tensor=True, 
                 device='cuda'
             )
-
-            print(f"Model Output:{output_text}")
-            print(f"Orginal:{prompt_text}")
+            print(f"Prompt:\n{prompt}\n")
+            print(f"Model Output:\n{output_text}\n")
+            print(f"\nOrginal:{prompt_text}\n")
 
             # 计算余弦相似度，直接使用二维张量
             similarity = float(torch.nn.functional.cosine_similarity(output_embedding, target_embedding, dim=0))
