@@ -140,6 +140,7 @@ class Program_Execution:
         retrieved_evidence = []
         # for each command
         for command in program:
+            print(f"\nCommand{command}\n")
             c_type = self.get_command_type(command)
             final_answer = None
             # verify a claim
@@ -189,6 +190,7 @@ class Program_Execution:
             sample_predictions = []
             for sample_program in program:
                 try:
+                    print(f"\nSample_program{sample_program}\n")
                     single_prediction, retrieved_evidence = self.parse_program(sample['idx'], sample_program, evidence)
                 except Exception as e:
                     print(f"Alert!!! execution error: {sample['idx']}")

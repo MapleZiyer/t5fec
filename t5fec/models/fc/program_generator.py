@@ -24,6 +24,8 @@ class Reasoning_Program_Generator:
         full_prompt = self.prompt_loader.prompt_construction(generated_texts, self.dataset_name)
 
         output = self.openai_api.generate(full_prompt, temperature)
-
-        print(output)
-        return output
+        
+        # 将输出字符串按行分割，并过滤掉空行
+        program_lines = [line.strip() for line in output.split('\n') if line.strip()]
+        
+        return program_lines

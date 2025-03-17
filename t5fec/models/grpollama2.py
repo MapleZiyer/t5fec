@@ -273,7 +273,7 @@ def main():
                 "id": None,
                 "claim": output_text,
                 "gold": "",
-                "predicted_programs": programs,
+                "predicted_programs": [programs],
                 "evidence": evidence
             }
             count += 1
