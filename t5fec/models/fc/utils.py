@@ -1,5 +1,5 @@
 import backoff  # for exponential backoff
-import openai
+from openai import OpenAI
 import os
 import asyncio
 from typing import Any
@@ -85,7 +85,7 @@ class OpenAIModel:
 
     # used for chat-gpt and gpt-4
     def chat_generate(self, input_string, temperature = 0.0):
-        client = openai(
+        client = OpenAI(
             base_url = "https://api.bianxie.ai/v1",
             api_key = "sk-NVz2LEoGeiJ0vMTkt4nwTHestJiEoRcjs8aplkkAEjBPULme"
         )
