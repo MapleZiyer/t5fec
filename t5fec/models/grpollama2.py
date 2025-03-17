@@ -19,6 +19,8 @@ from fc.program_generator import Reasoning_Program_Generator
 from fc.program_execution import Program_Execution
 # 移除LoRA相关导入
 
+count = 0
+
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
@@ -194,8 +196,6 @@ def main():
     similarity_model = SentenceTransformer('sentence-transformers/paraphrase-MiniLM-L6-v2')
     similarity_model = similarity_model.to('cuda')
     similarity_model.eval()
-    
-    i = 0
 
     def accuracy_reward(prompts, completions, **kwargs):
         rewards = []
@@ -219,6 +219,22 @@ def main():
                 think_start > think_end or answer_start > answer_end or
                 think_end > answer_start):
                 print(f"Format error: Tags missing or in wrong order\n")
+                rewards.append(0.0)
+                continue
+
+            # 检查每个标签是否只出现一次
+            if (output_text.count('<think>') != 1 or output_text.count('</think>') != 1 or
+                output_text.count('<answer>') != 1 or output_text.count('</answer>') != 1):
+                print(f"Format error: Each tag should appear exactly once\n")
+                rewards.append(0.0)
+                continue
+
+            # 检查所有文本是否都在标签内
+            text_before_think = output_text[:think_start].strip()
+            text_between_tags = output_text[think_end + len('</think>'):answer_start].strip()
+            text_after_answer = output_text[answer_end + len('</answer>'):].strip()
+            if text_before_think or text_between_tags or text_after_answer:
+                print(f"Format error: All text must be wrapped in tags\n")
                 rewards.append(0.0)
                 continue
                 
@@ -246,15 +262,16 @@ def main():
             # 使用事实验证模块评估生成文本
             programs = program_generator.batch_generate_programs(output_text)
             # 执行推理程序
+            global count
             sample_data = {
-                "idx": i,
+                "idx": count,
                 "id": None,
                 "claim": output_text,
                 "gold": "",
                 "predicted_programs": programs,
                 "evidence": evidence
             }
-            i += 1
+            count += 1
             prediction = program_executor.execute_on_dataset(sample_data)
             print(f"\nPrograms: {programs}\nPrediction: {prediction}\n")
             if prediction:
