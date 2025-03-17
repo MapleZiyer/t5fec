@@ -71,7 +71,7 @@ def main():
     # 添加 max_prompt_length 参数
     setattr(training_args, 'max_prompt_length', 4096)
     # 添加 max_completion_length 参数
-    setattr(training_args, 'max_completion_length', 256)
+    setattr(training_args, 'max_completion_length', 1024)
     # 添加 num_generations 参数
     setattr(training_args, 'num_generations', 2)  # 将生成数量设置为1
     # 添加 temperature 参数
@@ -87,6 +87,8 @@ def main():
     # 添加 sync_ref_model 参数
     setattr(training_args, 'sync_ref_model', True)
     setattr(training_args, 'use_cache', False)
+    # 添加 ref_model_sync_steps 参数
+    setattr(training_args, 'ref_model_sync_steps', 1)
 
     # 设置随机种子
     set_seed(42)
@@ -194,6 +196,10 @@ def main():
         for output, prompt in zip(completions, prompts):
             output_text = output if isinstance(output, str) else str(output).strip()
 
+            prompt_text = prompt.split("User:'")[1].split("'.Evidence:")[0].strip()
+            evidence = prompt.split("'.Evidence:'")[1].split("' Assistant:")[0].strip()
+            print(f"\nPrompt:{prompt}\n\n")
+            print(f"\nOrginal:{prompt_text}\n\n")
             print(f"Model Output:\n{output_text}\n\n")
 
             # 提取<answer>标签内的内容
@@ -202,9 +208,7 @@ def main():
             else:
                 rewards.append(0.0)
                 continue
-            prompt_text = prompt.split("User:'")[1].split("'.Evidence:")[0].strip()
-            evidence = prompt.split("'.Evidence:'")[1].split("' Assistant:")[0].strip()
-            print(f"\nOrginal:{prompt_text}\n\n")
+
             # 编码文本并确保维度正确
             output_embedding = similarity_model.encode(
                 output_text, 
