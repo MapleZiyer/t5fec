@@ -260,8 +260,8 @@ def main():
             # 计算余弦相似度，直接使用二维张量
             similarity = float(torch.nn.functional.cosine_similarity(output_embedding, target_embedding, dim=0))
             print(f"Similarity: {similarity}\n")
-            if similarity < 0.8:
-                rewards.append(0.3)
+            if similarity < 0.8 or output_text == prompt_text:
+                rewards.append(similarity*0.375)
                 continue
             # 使用事实验证模块评估生成文本
             programs = program_generator.batch_generate_programs(output_text)
