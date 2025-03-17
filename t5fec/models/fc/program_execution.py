@@ -174,7 +174,7 @@ class Program_Execution:
     def execute_on_dataset(self, sample):
         self.sample = sample
         # 确保sample是字典类型
-        self.gold_evidence_map = {sample['id']:sample['evidence']}
+        self.gold_evidence_map = {sample['idx']:sample['evidence']}
         dataset = [self.sample]  # 将单个样本包装成列表
 
         gt_labels, predictions = [], []

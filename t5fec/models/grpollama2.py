@@ -244,14 +244,14 @@ def main():
             # 使用事实验证模块评估生成文本
             programs = program_generator.batch_generate_programs(output_text)
             # 执行推理程序
-            sample_data = [{
+            sample_data = {
                 "idx": 0,
                 "id": None,
                 "claim": output_text,
                 "gold": "",
                 "predicted_programs": programs,
                 "evidence": evidence
-            }]
+            }
             prediction = program_executor.execute_on_dataset(sample_data)
             print(f"\nPrograms: {programs}\nPrediction: {prediction}\n")
             if prediction:
