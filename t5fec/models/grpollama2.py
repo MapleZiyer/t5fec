@@ -146,15 +146,7 @@ def main():
     # 在preprocess_function中使用更明确的日志格式
     def preprocess_function(examples):
         prompt = """
-        Task:You are an expert in correcting' erroneous sentences. Based on the following evidence, identify and correct errors in the original statement. Ensure that the corrected statement maintains the same meaning and structure as the original, only changing the parts that are incorrect.Do not output reasons, evidence or any irrelevant information, only output the modified sentence.Only output the modified sentence, nothing else!
-
-        Requirment:Do not output reasons, evidence or any irrelevant information, only output the modified statement.Only output the modified statement, nothing else!Only output one modified statement.
-
-        Original statement: '{original_statement}'
-
-        Evidence: '{evidence}'
-
-        Your output:
+        A conversation between User and Assistant, The user says a wrong claim, and the Assistant corrects it.Evidence regarding this wrong claim will be provided to you. You need to correct this wrong claim based on the given evidence.The assistant first thinks about the reasoning process in the mind and then provides the userwith the answer. The reasoning process and answer are enclosed within <think> </think> and<answer> </answer> tags, respectively, i.e., <think> reasoning process here </think><answer> answer here </answer>. User:'{claim}'.Evidence:'{evidence}' Assistant:
         """
         inputs = prompt.format(evidence=examples['evidence'], original_statement=examples['claim'])
 
@@ -200,8 +192,18 @@ def main():
         rewards = []
         for output, prompt in zip(completions, prompts):
             output_text = output if isinstance(output, str) else str(output).strip()
-            prompt_text = prompt.split('Original statement: ')[1].split('\n')[0].strip()
-            evidence = prompt.split('Evidence: ')[1].split('\n')[0].strip()
+
+            print(f"Model Output:\n{output_text}\n\n")
+            print(f"\nOrginal:{prompt_text}\n\n")
+            
+            # 提取<answer>标签内的内容
+            if ('<answer>' in output_text and '</answer>' in output_text) and ('<think>' in output_text and '</think>' in output_text):
+                output_text = output_text.split('<answer>')[1].split('</answer>')[0].strip()
+            else:
+                rewards.append(0.0)
+                continue
+            prompt_text = prompt.split("User:'")[1].split("'.Evidence:")[0].strip()
+            evidence = prompt.split("'.Evidence:'")[1].split("' Assistant:")[0].strip()
             # 编码文本并确保维度正确
             output_embedding = similarity_model.encode(
                 output_text, 
@@ -213,9 +215,6 @@ def main():
                 convert_to_tensor=True, 
                 device='cuda'
             )
-
-            print(f"Model Output:\n{output_text}\n\n")
-            print(f"\nOrginal:{prompt_text}\n\n")
 
             # 计算余弦相似度，直接使用二维张量
             similarity = float(torch.nn.functional.cosine_similarity(output_embedding, target_embedding, dim=0))
