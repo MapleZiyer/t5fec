@@ -120,6 +120,7 @@ class OpenAIModel:
                 stop = self.stop_words
         )
         """
+        print(f"\nCompletion:{completion}\n")
         generated_text = completion.choices[0].message.content.strip()
         return generated_text
     

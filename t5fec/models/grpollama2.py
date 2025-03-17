@@ -267,6 +267,7 @@ def main():
             # 使用事实验证模块评估生成文本
             programs = program_generator.batch_generate_programs(output_text)
             # 执行推理程序
+            print(f"\nPrograms:{programs},Type:{type(programs)}\n")
             global count
             sample_data = {
                 "idx": count,
@@ -278,7 +279,7 @@ def main():
             }
             count += 1
             prediction = program_executor.execute_on_dataset(sample_data)
-            print(f"\nPrograms: {programs}\nPrediction: {prediction}\n")
+            print(f"\nPrediction: {prediction}\n")
             if prediction:
                 rewards.append(1.0)
             else:
