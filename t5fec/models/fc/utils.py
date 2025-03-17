@@ -4,21 +4,24 @@ import os
 import asyncio
 from typing import Any
 
-openai.api_base = "https://api.bianxie.ai/v1"
+client = OpenAI(
+    base_url = "https://api.bianxie.ai/v1",
+    api_key = "sk-NVz2LEoGeiJ0vMTkt4nwTHestJiEoRcjs8aplkkAEjBPULme"
+)
 
-@backoff.on_exception(backoff.expo, openai.OpenAIError)
-@backoff.on_exception(backoff.expo, (openai.OpenAIError, TimeoutError), max_tries=3)
+@backoff.on_exception(backoff.expo, Exception)
+@backoff.on_exception(backoff.expo, (Exception, TimeoutError), max_tries=3)
 def completions_with_backoff(**kwargs):
     try:
-        return openai.Completion.create(**kwargs, timeout=30)
+        return client.completions.create(**kwargs, timeout=30)
     except Exception as e:
         print(f"OpenAI API Error: {str(e)}")
         raise
 
-@backoff.on_exception(backoff.expo, (openai.OpenAIError, TimeoutError), max_tries=3)
+@backoff.on_exception(backoff.expo, (Exception, TimeoutError), max_tries=3)
 def chat_completions_with_backoff(**kwargs):
     try:
-        return openai.chat.completions.create(**kwargs, timeout=30)
+        return client.chat.completions.create(**kwargs, timeout=30)
     except Exception as e:
         print(f"OpenAI API Error: {str(e)}")
         raise
@@ -33,7 +36,7 @@ async def dispatch_openai_chat_requests(
 ) -> list[str]:
     try:
         async_responses = [
-            openai.chat.completions.acreate(
+            client.chat.completions.acreate(
                 model=model,
                 messages=x,
                 temperature=temperature,
@@ -77,8 +80,10 @@ async def dispatch_openai_prompt_requests(
 
 class OpenAIModel:
     def __init__(self, API_KEY, model_name, stop_words, max_new_tokens) -> None:
-        openai.api_key = API_KEY
-        openai.api_base = "https://api.bianxie.ai/v1"
+        self.client = OpenAI(
+            base_url = "https://api.bianxie.ai/v1",
+            api_key = API_KEY
+        )
         self.model_name = model_name
         self.max_new_tokens = max_new_tokens
         self.stop_words = stop_words
