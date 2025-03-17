@@ -218,9 +218,6 @@ def main():
                 
             # 提取answer标签内的内容
             output_text = output_text[answer_start + len('<answer>'):answer_end].strip()
-            else:
-                rewards.append(0.0)
-                continue
 
             # 编码文本并确保维度正确
             output_embedding = similarity_model.encode(
