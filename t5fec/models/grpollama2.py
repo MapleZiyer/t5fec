@@ -153,6 +153,7 @@ def main():
         if not inputs.strip():
             inputs = "No input provided."
             logger.warning("Empty input detected, using default input")
+
         model_inputs = tokenizer(
             inputs,
             max_length=4096,
@@ -194,7 +195,6 @@ def main():
             output_text = output if isinstance(output, str) else str(output).strip()
 
             print(f"Model Output:\n{output_text}\n\n")
-            print(f"\nOrginal:{prompt_text}\n\n")
 
             # 提取<answer>标签内的内容
             if ('<answer>' in output_text and '</answer>' in output_text) and ('<think>' in output_text and '</think>' in output_text):
@@ -204,6 +204,7 @@ def main():
                 continue
             prompt_text = prompt.split("User:'")[1].split("'.Evidence:")[0].strip()
             evidence = prompt.split("'.Evidence:'")[1].split("' Assistant:")[0].strip()
+            print(f"\nOrginal:{prompt_text}\n\n")
             # 编码文本并确保维度正确
             output_embedding = similarity_model.encode(
                 output_text, 
