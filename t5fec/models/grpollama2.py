@@ -89,7 +89,8 @@ def main():
     setattr(training_args, 'use_cache', False)
     # 添加 ref_model_sync_steps 参数
     setattr(training_args, 'ref_model_sync_steps', 1)
-
+    # 添加 ref_model_mixup_alpha 参数
+    setattr(training_args, 'ref_model_mixup_alpha', 1.0)
     # 设置随机种子
     set_seed(42)
 
@@ -148,7 +149,10 @@ def main():
     # 在preprocess_function中使用更明确的日志格式
     def preprocess_function(examples):
         prompt = """
-        You are a assistant of feature error correction.The user says a wrong claim, and the Assistant corrects it.Evidence regarding this wrong claim will be provided to you. You need to correct this wrong claim based on the given evidence.The assistant first thinks about the reasoning process in the mind and then provides the user with the answer. The reasoning process and answer are enclosed within <think> </think> and<answer> </answer> tags, respectively, i.e., <think> reasoning process here </think><answer> answer here </answer>.All outputs should be wrapped in tags.The thought process should be enclosed in <think></think>, and the final result should be enclosed in <answer></answer>. User:'{claim}'.Evidence:'{evidence}' Assistant:
+        You are a feature error correction assistant. The user provides an incorrect statement, and you need to correct it. Evidence for correcting this incorrect statement will be provided to you, and you must use the given evidence to revise the incorrect statement. The revised statement should not differ significantly in semantics and format from the original statement.
+        You must first think through the reasoning process in your mind before providing the user with the answer. The reasoning process and the answer should be enclosed within the <think></think> and <answer></answer> tags, respectively, i.e., <think> reasoning process here </think><answer> answer here </answer>.
+        All your outputs must be wrapped in tags. The thought process should be enclosed in <think></think>, and the final result should be enclosed in <answer></answer>. First, output the reasoning process, then output the final answer.
+        User:'{claim}'.Evidence:'{evidence}' Assistant:
         """
         inputs = prompt.format(evidence=examples['evidence'], claim=examples['claim'])
 
