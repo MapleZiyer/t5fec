@@ -21,7 +21,7 @@ def parse_args():
     parser.add_argument("--cache_dir", type=str)
     parser.add_argument('--corpus_index_path', default=None, type=str)
     parser.add_argument('--num_retrieved', default=5, type=int)
-    parser.add_argument('--max_evidence_length', default=3000, help = 'to avoid exceeding GPU memory', type=int)
+    parser.add_argument('--max_evidence_length', default=4096, help = 'to avoid exceeding GPU memory', type=int)
     args = parser.parse_args()
     return args
 
@@ -136,17 +136,18 @@ class Program_Execution:
     
     def parse_program(self, ID, program, evidence):
         variable_map = {}
-        claim_only = True if self.args.setting == 'close-book' else False
+        claim_only = True if self.setting == 'close-book' else False
         retrieved_evidence = []
         # for each command
         for command in program:
+            print(f"\nCommand:{command}\n")
             c_type = self.get_command_type(command)
             final_answer = None
             # verify a claim
             if c_type == "VERIFY":
                 return_var, claim = self.parse_verify_command(command, variable_map)
                 # if open-book setting, then retrieve evidence from the corpus
-                if self.args.setting == 'open-book':
+                if self.setting == 'open-book':
                     evidence, retrieved_results = self.retrieve_evidence(claim)
                     retrieved_evidence += retrieved_results
                 
@@ -156,7 +157,7 @@ class Program_Execution:
             elif c_type == "QUESTION":
                 return_var, question = self.parse_question_command(command, variable_map)
                 # if open-book setting, then retrieve evidence from the corpus
-                if self.args.setting == 'open-book':
+                if self.setting == 'open-book':
                     evidence, retrieved_results = self.retrieve_evidence(question)
                     retrieved_evidence += retrieved_results
                 
@@ -189,6 +190,7 @@ class Program_Execution:
             sample_predictions = []
             for sample_program in program:
                 try:
+                    print(f"\nSample_program: {sample_program}")
                     single_prediction, retrieved_evidence = self.parse_program(sample['idx'], sample_program, evidence)
                 except Exception as e:
                     print(f"Alert!!! execution error: {sample['idx']}")

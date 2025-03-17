@@ -240,6 +240,11 @@ def main():
                 
             # 提取answer标签内的内容
             output_text = output_text[answer_start + len('<answer>'):answer_end].strip()
+            
+            if output_text.count('<') > 0 and output_text.count('>') > 0:
+                print(f"Format error: More tag\n")
+                rewards.append(0.0)
+                continue
 
             # 编码文本并确保维度正确
             output_embedding = similarity_model.encode(
@@ -278,6 +283,7 @@ def main():
                 rewards.append(1.0)
             else:
                 rewards.append(0.0)
+            print(f"\nRewards:{rewards}\n")
         return torch.tensor(rewards, requires_grad=True)
 
     reward_funcs = [accuracy_reward]
