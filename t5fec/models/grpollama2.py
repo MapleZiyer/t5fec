@@ -10,6 +10,8 @@ from transformers import set_seed
 from transformers.trainer_utils import get_last_checkpoint
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+from rouge_score import rouge_scorer, scoring
+
 from trl import GRPOTrainer, get_peft_config
 import wandb
 
@@ -259,9 +261,15 @@ def main():
 
             # 计算余弦相似度，直接使用二维张量
             similarity = float(torch.nn.functional.cosine_similarity(output_embedding, target_embedding, dim=0))
-            print(f"Similarity: {similarity}\n")
-            if similarity < 0.8 or output_text == prompt_text:
-                rewards.append(similarity*0.375)
+            scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
+            scores = scorer.score(prompt_text,output_text)
+            rouge1_f1 = scores['rouge1'].fmeasure
+            rouge2_f1 = scores['rouge2'].fmeasure
+            rougeL_f1 = scores['rougeL'].fmeasure
+            rouge_f1 = (rouge1_f1 + rouge2_f1 + rougeL_f1) / 3
+            print(f"Similarity: {similarity},Rouge:{scores},Rouge_f1:{rouge_f1}\n")
+            if similarity < 0.8 or rouge_f1 < 0.5 or output_text == prompt_text:
+                rewards.append(similarity*0.375*0.5+rouge1_f1*0.5*0.6)
                 continue
             # 使用事实验证模块评估生成文本
             programs = program_generator.batch_generate_programs(output_text)
