@@ -85,7 +85,25 @@ class OpenAIModel:
 
     # used for chat-gpt and gpt-4
     def chat_generate(self, input_string, temperature = 0.0):
-        openai.api_base = "https://api.bianxie.ai/v1"
+        client = openai(
+            base_url = "https://api.bianxie.ai/v1",
+            api_key = "sk-NVz2LEoGeiJ0vMTkt4nwTHestJiEoRcjs8aplkkAEjBPULme"
+        )
+
+        completion = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {
+                        "role": "user",
+                        "content": input_string
+                    }
+                ],
+                max_tokens = self.max_new_tokens,
+                temperature = temperature,
+                top_p = 1.0,
+                stop = self.stop_words
+            )   
+        """
         response = chat_completions_with_backoff(
                 model = self.model_name,
                 messages=[
@@ -96,7 +114,8 @@ class OpenAIModel:
                 top_p = 1.0,
                 stop = self.stop_words
         )
-        generated_text = response['choices'][0]['message']['content'].strip()
+        """
+        generated_text = completion['choices'][0]['message']['content'].strip()
         return generated_text
     
     # used for text/code-davinci

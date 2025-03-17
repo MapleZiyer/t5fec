@@ -198,13 +198,26 @@ def main():
 
             prompt_text = prompt.split("User:'")[1].split("'.Evidence:")[0].strip()
             evidence = prompt.split("'.Evidence:'")[1].split("' Assistant:")[0].strip()
-            print(f"\nPrompt:{prompt}\n\n")
+
             print(f"\nOrginal:{prompt_text}\n\n")
             print(f"Model Output:\n{output_text}\n\n")
 
-            # 提取<answer>标签内的内容
-            if ('<answer>' in output_text and '</answer>' in output_text) and ('<think>' in output_text and '</think>' in output_text):
-                output_text = output_text.split('<answer>')[1].split('</answer>')[0].strip()
+            # 检查格式是否正确 - 必须先有<think></think>，然后再有<answer></answer>
+            think_start = output_text.find('<think>')
+            think_end = output_text.find('</think>')
+            answer_start = output_text.find('<answer>')
+            answer_end = output_text.find('</answer>')
+            
+            # 检查所有标签是否存在且顺序正确
+            if (think_start == -1 or think_end == -1 or answer_start == -1 or answer_end == -1 or
+                think_start > think_end or answer_start > answer_end or
+                think_end > answer_start):
+                print(f"Format error: Tags missing or in wrong order\n")
+                rewards.append(0.0)
+                continue
+                
+            # 提取answer标签内的内容
+            output_text = output_text[answer_start + len('<answer>'):answer_end].strip()
             else:
                 rewards.append(0.0)
                 continue
