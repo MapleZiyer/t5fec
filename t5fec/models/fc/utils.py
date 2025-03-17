@@ -120,7 +120,7 @@ class OpenAIModel:
                 stop = self.stop_words
         )
         """
-        generated_text = completion['choices'][0]['message']['content'].strip()
+        generated_text = completion.choices[0].message.content.strip()
         return generated_text
     
     # used for text/code-davinci
@@ -157,7 +157,7 @@ class OpenAIModel:
                     open_ai_messages_list, self.model_name, temperature, self.max_new_tokens, 1.0, self.stop_words
             )
         )
-        return [x['choices'][0]['message']['content'].strip() for x in predictions]
+        return [x.choices[0].message.content.strip() for x in predictions]
     
     def batch_prompt_generate(self, prompt_list, temperature = 0.0):
         predictions = asyncio.run(
