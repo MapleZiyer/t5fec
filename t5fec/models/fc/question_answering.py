@@ -8,6 +8,7 @@ class T5_Question_Answering:
 
     def generate(self, input_string, **generator_args):
         device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        self.model = self.model.to(device)
         input_ids = self.tokenizer.encode(input_string, return_tensors="pt").to(device)
         with torch.no_grad():
             res = self.model.generate(input_ids, **generator_args)

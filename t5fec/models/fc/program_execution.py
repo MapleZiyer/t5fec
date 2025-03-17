@@ -202,7 +202,7 @@ class Program_Execution:
                             'gold': sample['gold'], 
                             'prediction': 'supports' if final_prediction == True else 'refutes'})
             print(final_prediction)
-            return final_prediction
+        return final_prediction
 
 if __name__ == "__main__":
     args = parse_args()
