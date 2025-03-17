@@ -148,7 +148,7 @@ def main():
     # 在preprocess_function中使用更明确的日志格式
     def preprocess_function(examples):
         prompt = """
-        You are a assistant of feature error correction.The user says a wrong claim, and the Assistant corrects it.Evidence regarding this wrong claim will be provided to you. You need to correct this wrong claim based on the given evidence.The assistant first thinks about the reasoning process in the mind and then provides the user with the answer. The reasoning process and answer are enclosed within <think> </think> and<answer> </answer> tags, respectively, i.e., <think> reasoning process here </think><answer> answer here </answer>.All outputs should be wrapped in tags. User:'{claim}'.Evidence:'{evidence}' Assistant:
+        You are a assistant of feature error correction.The user says a wrong claim, and the Assistant corrects it.Evidence regarding this wrong claim will be provided to you. You need to correct this wrong claim based on the given evidence.The assistant first thinks about the reasoning process in the mind and then provides the user with the answer. The reasoning process and answer are enclosed within <think> </think> and<answer> </answer> tags, respectively, i.e., <think> reasoning process here </think><answer> answer here </answer>.All outputs should be wrapped in tags.The thought process should be enclosed in <think></think>, and the final result should be enclosed in <answer></answer>. User:'{claim}'.Evidence:'{evidence}' Assistant:
         """
         inputs = prompt.format(evidence=examples['evidence'], claim=examples['claim'])
 
