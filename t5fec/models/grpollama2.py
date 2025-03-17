@@ -148,12 +148,11 @@ def main():
     dataset = dataset.filter(lambda x: x['label'] == 'refutes')
 
     # 数据预处理函数
-    # 在preprocess_function中使用更明确的日志格式
     def preprocess_function(examples):
         prompt = """
         You are a feature error correction assistant. The user provides an incorrect statement, and you need to correct it. Evidence for correcting this incorrect statement will be provided to you, and you must use the given evidence to revise the incorrect statement. The revised statement should not differ significantly in semantics and format from the original statement.
         You must first think through the reasoning process in your mind before providing the user with the answer. The reasoning process and the answer should be enclosed within the <think></think> and <answer></answer> tags, respectively, i.e., <think> reasoning process here </think><answer> answer here </answer>.
-        All your outputs must be wrapped in tags. The thought process should be enclosed in <think></think>, and the final result should be enclosed in <answer></answer>. First, output the reasoning process, then output the final answer.
+        All your outputs must be wrapped in tags. The thought process should be enclosed in <think></think>, and the final result should be enclosed in <answer></answer>. First, output the reasoning process, then output the final answer.The two pairs of tags must both be output.Each tag pair can and must appear only once.Tags cannot be nested.
         User:'{claim}'.Evidence:'{evidence}' Assistant:
         """
         inputs = prompt.format(evidence=examples['evidence'], claim=examples['claim'])
@@ -262,7 +261,7 @@ def main():
             similarity = float(torch.nn.functional.cosine_similarity(output_embedding, target_embedding, dim=0))
             print(f"Similarity: {similarity}\n")
             if similarity < 0.8:
-                rewards.append(0.0)
+                rewards.append(0.3)
                 continue
             # 使用事实验证模块评估生成文本
             programs = program_generator.batch_generate_programs(output_text)
@@ -283,7 +282,7 @@ def main():
             if prediction:
                 rewards.append(1.0)
             else:
-                rewards.append(0.0)
+                rewards.append(0.5)
             print(f"\nRewards:{rewards}\n")
         return torch.tensor(rewards, requires_grad=True)
 
