@@ -195,6 +195,8 @@ def main():
     similarity_model = similarity_model.to('cuda')
     similarity_model.eval()
     
+    i = 0
+
     def accuracy_reward(prompts, completions, **kwargs):
         rewards = []
         for output, prompt in zip(completions, prompts):
@@ -245,13 +247,14 @@ def main():
             programs = program_generator.batch_generate_programs(output_text)
             # 执行推理程序
             sample_data = {
-                "idx": 0,
+                "idx": i,
                 "id": None,
                 "claim": output_text,
                 "gold": "",
                 "predicted_programs": programs,
                 "evidence": evidence
             }
+            i += 1
             prediction = program_executor.execute_on_dataset(sample_data)
             print(f"\nPrograms: {programs}\nPrediction: {prediction}\n")
             if prediction:

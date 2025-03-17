@@ -189,9 +189,9 @@ class Program_Execution:
             sample_predictions = []
             for sample_program in program:
                 try:
-                    single_prediction, retrieved_evidence = self.parse_program(sample['id'], sample_program, evidence)
+                    single_prediction, retrieved_evidence = self.parse_program(sample['idx'], sample_program, evidence)
                 except Exception as e:
-                    print(f"Alert!!! execution error: {sample['id']}")
+                    print(f"Alert!!! execution error: {sample['idx']}")
                     single_prediction = random.sample([True, False], 1)[0]
                 sample_predictions.append(single_prediction)
             
@@ -199,7 +199,7 @@ class Program_Execution:
             false_count = len([pred for pred in sample_predictions if pred == False])
             final_prediction = True if true_count > false_count else False
             predictions.append('supports' if final_prediction == True else 'refutes')
-            results.append({'id': sample['id'], 
+            results.append({'id': sample['idx'], 
                             'claim': sample['claim'],
                             'gold': sample['gold'], 
                             'prediction': 'supports' if final_prediction == True else 'refutes'})
