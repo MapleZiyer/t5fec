@@ -148,7 +148,7 @@ def main():
         prompt = """
         A conversation between User and Assistant, The user says a wrong claim, and the Assistant corrects it.Evidence regarding this wrong claim will be provided to you. You need to correct this wrong claim based on the given evidence.The assistant first thinks about the reasoning process in the mind and then provides the userwith the answer. The reasoning process and answer are enclosed within <think> </think> and<answer> </answer> tags, respectively, i.e., <think> reasoning process here </think><answer> answer here </answer>. User:'{claim}'.Evidence:'{evidence}' Assistant:
         """
-        inputs = prompt.format(evidence=examples['evidence'], original_statement=examples['claim'])
+        inputs = prompt.format(evidence=examples['evidence'], claim=examples['claim'])
 
         if not inputs.strip():
             inputs = "No input provided."
@@ -195,7 +195,7 @@ def main():
 
             print(f"Model Output:\n{output_text}\n\n")
             print(f"\nOrginal:{prompt_text}\n\n")
-            
+
             # 提取<answer>标签内的内容
             if ('<answer>' in output_text and '</answer>' in output_text) and ('<think>' in output_text and '</think>' in output_text):
                 output_text = output_text.split('<answer>')[1].split('</answer>')[0].strip()
