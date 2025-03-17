@@ -153,6 +153,7 @@ class Program_Execution:
                 
                 answer = self.QA_module.answer_verify_question(claim, evidence, claim_only)['answer_text']
                 variable_map[return_var] = self.map_direct_answer_to_label(answer)
+                print(f"\nc_type == 'VERIFY',Answer:{answer}\n")
             # ask a question
             elif c_type == "QUESTION":
                 return_var, question = self.parse_question_command(command, variable_map)
@@ -163,12 +164,10 @@ class Program_Execution:
                 
                 answer = self.QA_module.answer_question_directly(question, evidence, claim_only)['answer_text']
                 variable_map[return_var] = answer
+                print(f"\nc_type == 'QUESTION',Answer:{answer}\n")
             elif c_type == 'FINAL':
-                try:
-                    final_answer = self.derive_final_answer(command, variable_map)
-                except:
-                    print(f"Alert!!! parsing error: {ID}")
-                    final_answer = random.sample([True, False], 1)[0]
+                final_answer = self.derive_final_answer(command, variable_map)
+                print(f"\nc_type == 'FINAL',Answer:{final_answer}\n")
         
         return final_answer, retrieved_evidence
 
