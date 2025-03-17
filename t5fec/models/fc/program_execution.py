@@ -183,7 +183,7 @@ class Program_Execution:
             program = sample['predicted_programs']
             gt_labels.append(sample['gold'])
             # get evidence
-            evidence = self.gold_evidence_map[sample['id']] if self.args.setting == 'gold' else None
+            evidence = self.gold_evidence_map[sample['id']] if self.setting == 'gold' else None
             
             # execute program
             sample_predictions = []
