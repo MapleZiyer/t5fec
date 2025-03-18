@@ -248,6 +248,11 @@ def main():
                 rewards.append(0.0)
                 continue
 
+            if len(output_text)*1.0 / len(prompt_text) < 0.8:
+                print(f"Format error: Answer too short\n")
+                rewards.append(0.05)
+                continue
+
             # 标准化处理字符串，移除多余空格和换行符
             normalized_output = ' '.join(output_text.strip().split())
             normalized_prompt = ' '.join(prompt_text.strip().split())
@@ -281,10 +286,7 @@ def main():
                 print(f"Output is exactly the same as input\n")
                 rewards.append(0.05)
                 continue
-            if len(output_text)*1.0 / len(prompt_text) < 0.8:
-                print(f"Format error: Answer too short\n")
-                rewards.append(0.05)
-                continue
+
             print(f"Similarity: {similarity},Rouge_f1:{rouge_f1},SARI:{results_sari},Final:{result_final}\n")
             if result_final < 0.3:
                 rewards.append(result_final)

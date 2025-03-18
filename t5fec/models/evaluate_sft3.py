@@ -40,7 +40,7 @@ def main():
             max_length=4096,
             truncation=True,
             padding='max_length',
-            return_tensors="pt"  # 返回PyTorch tensors
+            return_tensors=None  
         )
         
         labels = tokenizer(
@@ -48,10 +48,21 @@ def main():
             max_length=256,
             truncation=True,
             padding='max_length',
-            return_tensors="pt"
+            return_tensors=None
         )
 
-        model_inputs['labels'] = labels['input_ids']
+        # 手动转换为张量并确保维度正确
+        input_ids = torch.tensor(model_inputs["input_ids"], dtype=torch.long)
+        attention_mask = torch.tensor(model_inputs["attention_mask"], dtype=torch.long)
+        labels_tensor = torch.tensor(labels["input_ids"], dtype=torch.long)
+        
+        # 更新模型输入
+        model_inputs["input_ids"] = input_ids
+        model_inputs["attention_mask"] = attention_mask
+        model_inputs["labels"] = labels_tensor
+        # 可以选择打印数据实例和目标，以确保正确性
+        print(f"\nData Instance: {data_instance}\n\nTargets: {targets}\n")
+
         return model_inputs
 
     # 处理验证数据集
