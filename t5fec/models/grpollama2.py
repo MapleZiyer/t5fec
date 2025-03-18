@@ -252,10 +252,6 @@ def main():
             normalized_output = ' '.join(output_text.strip().split())
             normalized_prompt = ' '.join(prompt_text.strip().split())
             
-            if normalized_output == normalized_prompt:
-                print(f"Output is exactly the same as input\n")
-                rewards.append(0.0)
-                continue
 
             # 编码文本并确保维度正确
             output_embedding = similarity_model.encode(
@@ -281,6 +277,10 @@ def main():
             results_sari = sari.compute(sources=[prompt_text], predictions=[output_text], references=[[""]])
             results_sari = results_sari['sari']
             result_final = similarity*0.3*0.1 + rouge1_f1*0.5*0.3 + results_sari*0.005*0.6
+            if normalized_output == normalized_prompt or (rouge_f1 > 0.95 and similarity>0.95):
+                print(f"Output is exactly the same as input\n")
+                rewards.append(0.0)
+                continue
             print(f"Similarity: {similarity},Rouge_f1:{rouge_f1},SARI:{results_sari},Final:{result_final}\n")
             if result_final < 0.3:
                 rewards.append(result_final)
@@ -304,7 +304,7 @@ def main():
             if prediction:
                 rewards.append(1.0)
             else:
-                rewards.append(0.5 if result_final+0.2 > 0.5 else result_final+0.2)
+                rewards.append(0.5 if result_final > 0.5 else result_final)
             print(f"\nRewards:{rewards}\n")
         return torch.tensor(rewards, requires_grad=True).clone().detach().requires_grad_(True)
 
