@@ -269,7 +269,7 @@ def main():
             rougeL_f1 = scores['rougeL'].fmeasure
             rouge_f1 = (rouge1_f1 + rouge2_f1 + rougeL_f1) / 3
             sari = load("He-Xingwei/sari_metric")
-            results_sari = sari.compute(sources=[prompt_text], predictions=[output_text], references=[""])
+            results_sari = sari.compute(sources=[prompt_text], predictions=[output_text], references=[[""]])
             print(f"Similarity: {similarity},Rouge:{scores},Rouge_f1:{rouge_f1},SARI:{results_sari}\n")
             if similarity < 0.8 or rouge_f1 < 0.5 or results_sari < 0.5 or output_text == prompt_text:
                 rewards.append(similarity*0.375*0.2+rouge1_f1*0.5*0.4 + results_sari*0.5*0.4)
