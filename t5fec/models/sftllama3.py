@@ -111,7 +111,6 @@ def main():
         )
         
         model_inputs['labels'] = labels['input_ids']
-        model_inputs['attention_mask'] = model_inputs['attention_mask']
         print(f"\nData Instance: {data_instance}\n\nTargets: {targets}\n")
         return model_inputs
 
