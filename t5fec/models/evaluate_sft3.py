@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def evaluate_model(model_path="../checkpoints/Llama-3.2-1B-Instruct3"):
     # 加载模型和分词器
-    model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16)
+    model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16).to('cuda')
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     tokenizer.pad_token = tokenizer.eos_token
     tokenizer.padding_side = "right"
