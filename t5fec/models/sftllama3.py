@@ -111,13 +111,13 @@ def main():
         )
         
         model_inputs['labels'] = labels['input_ids']
+        model_inputs['attention_mask'] = model_inputs['attention_mask']
         print(f"\nData Instance: {data_instance}\n\nTargets: {targets}\n")
         return model_inputs
 
     # 处理数据集
     processed_dataset = dataset['train'].map(
         preprocess_function,
-        remove_columns=dataset['train'].column_names,
         desc="Processing dataset",
     )
 
