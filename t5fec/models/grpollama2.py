@@ -289,7 +289,7 @@ def main():
 
             print(f"Similarity: {similarity},Rouge_f1:{rouge_f1},SARI:{results_sari},Final:{result_final}\n")
             if result_final < 0.3:
-                rewards.append(result_final)
+                rewards.append(result_final / 2)
                 continue
             # 使用事实验证模块评估生成文本
             programs = program_generator.batch_generate_programs(output_text)
@@ -310,7 +310,7 @@ def main():
             if prediction:
                 rewards.append(1.0)
             else:
-                rewards.append(0.3)
+                rewards.append(0.4)
             print(f"\nRewards:{rewards}\n")
         return torch.tensor(rewards, requires_grad=True).clone().detach().requires_grad_(True)
 
