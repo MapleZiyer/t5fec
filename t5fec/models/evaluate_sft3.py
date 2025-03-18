@@ -47,7 +47,7 @@ def main():
         
         labels = tokenizer(
             targets,
-            max_length=256,
+            max_length=4096,  # 修改为与输入相同的长度
             truncation=True,
             padding='max_length',
             return_tensors=None
