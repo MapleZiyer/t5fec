@@ -83,9 +83,14 @@ def main():
         # 由于已经在预处理时将张量移动到了正确的设备，这里不需要再次移动
         inputs = batch
 
+        # 确保输入张量维度正确
+        input_ids = inputs['input_ids'].unsqueeze(0) if inputs['input_ids'].dim() == 1 else inputs['input_ids']
+        attention_mask = inputs['attention_mask'].unsqueeze(0) if inputs['attention_mask'].dim() == 1 else inputs['attention_mask']
+
         with torch.no_grad():  # 禁用梯度计算
             outputs = model.generate(
-                inputs['input_ids'],
+                input_ids,
+                attention_mask=attention_mask,
                 max_length=256,  # 生成的最大长度
                 num_beams=5,  # 使用束搜索
                 no_repeat_ngram_size=2,  # 避免重复n-gram
