@@ -272,8 +272,8 @@ def main():
             results_sari = sari.compute(sources=[prompt_text], predictions=[output_text], references=[[""]])
             results_sari = results_sari['sari']
             print(f"Similarity: {similarity},Rouge:{scores},Rouge_f1:{rouge_f1},SARI:{results_sari}\n")
-            if similarity < 0.8 or rouge_f1 < 0.5 or results_sari < 0.5 or output_text == prompt_text:
-                rewards.append(similarity*0.375*0.2+rouge1_f1*0.5*0.4 + results_sari*0.5*0.4)
+            if similarity < 0.8 or rouge_f1 < 0.5 or results_sari < 60 or output_text == prompt_text:
+                rewards.append(similarity*0.375*0.2+rouge1_f1*0.5*0.4 + results_sari*0.005*0.4)
                 continue
             # 使用事实验证模块评估生成文本
             programs = program_generator.batch_generate_programs(output_text)
