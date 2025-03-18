@@ -94,16 +94,13 @@ def main():
 
     # 数据预处理函数
     def preprocess_function(examples):
-        prompt = """You are an expert in correcting erroneous sentences. Based on the following evidence, identify and correct errors in the original statement. Ensure that the corrected statement maintains the same meaning and structure as the original, only changing the parts that are incorrect.
-
-        Evidence: {evidence}
-
-        Original statement: {original_statement}
-
-        Corrected statement: """
+        prompt = """You are a feature error correction assistant. The user provides an incorrect statement, and you need to correct it. Evidence for correcting this incorrect statement will be provided to you, and you must use the given evidence to revise the incorrect statement. Only correct the erroneous parts of the sentence while keeping the rest intact. The original meaning of the sentence must not be changed.The revised statement should not differ significantly in semantics and format from the original statement.
+        You must first think through the reasoning process in your mind before providing the user with the answer. The final answer should be enclosed within the <answer></answer> tags, respectively, i.e.,<answer> answer here </answer>.
+        First, output the reasoning process, then output the final answer.The final answer should be enclosed in <answer></answer>.<answer></answer> tags pair can and must appear only once.
+        User:'{original_statement}'.Evidence:'{evidence}' Assistant:"""
 
         inputs = prompt.format(evidence=examples['gold_evidence'], original_statement=examples['mutated'])
-        targets = examples['original']
+        targets = f"<answer>{examples['original']}</answer>"
 
         model_inputs = tokenizer(
             inputs,
