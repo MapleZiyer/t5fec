@@ -272,8 +272,9 @@ def main():
             results_sari = sari.compute(sources=[prompt_text], predictions=[output_text], references=[[""]])
             results_sari = results_sari['sari']
             print(f"Similarity: {similarity},Rouge:{scores},Rouge_f1:{rouge_f1},SARI:{results_sari}\n")
-            if similarity < 0.8 or rouge_f1 < 0.5 or results_sari < 60 or output_text == prompt_text:
-                rewards.append(similarity*0.375*0.2+rouge1_f1*0.5*0.4 + results_sari*0.005*0.4)
+            result_final = similarity*0.375*0.2 + rouge1_f1*0.4 + results_sari*0.005*0.4
+            if result_final < 0.3 or output_text == prompt_text:
+                rewards.append(result_final)
                 continue
             # 使用事实验证模块评估生成文本
             programs = program_generator.batch_generate_programs(output_text)
@@ -296,7 +297,7 @@ def main():
             else:
                 rewards.append(0.5)
             print(f"\nRewards:{rewards}\n")
-        return torch.tensor(rewards, requires_grad=True)
+        return torch.tensor(rewards, requires_grad=True).clone().detach().requires_grad_(True)
 
     reward_funcs = [accuracy_reward]
 
