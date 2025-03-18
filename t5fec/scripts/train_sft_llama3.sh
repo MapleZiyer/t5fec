@@ -15,7 +15,7 @@ export NCCL_P2P_DISABLE=1
 export NCCL_IB_DISABLE=0
 export NCCL_DEBUG=INFO
 
-mkdir -p ../checkpoints/Llama-3.2-1B-Instruct3
+mkdir -p ../checkpoints/Llama-3.2-1B-Instruct4
 
 # 打印训练配置信息
 echo "Starting training with following configuration:"

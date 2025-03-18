@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 def main():
     # 训练参数设置
     training_args = transformers.TrainingArguments(
-        output_dir="../checkpoints/Llama-3.2-1B-Instruct3",
+        output_dir="../checkpoints/Llama-3.2-1B-Instruct4",
         learning_rate=2e-5,
         num_train_epochs=1,
         per_device_train_batch_size=4,  # 每个GPU的batch size
@@ -91,9 +91,11 @@ def main():
     # 数据预处理函数
     def preprocess_function(examples):
         data_instance = f"mutation:'{examples['mutated']}'\n\nevidence:'{examples['gold_evidence']}'\n\n"
-
+        
+        # 确保目标数据正确
         targets = f"<answer>{examples['original']}</answer>"
 
+        # 使用tokenizer处理输入和目标文本
         model_inputs = tokenizer(
             data_instance,
             max_length=4096,
@@ -110,8 +112,12 @@ def main():
             return_tensors=None
         )
         
+        # 将标签添加到模型输入中
         model_inputs['labels'] = labels['input_ids']
+
+        # 可以选择打印数据实例和目标，以确保正确性
         print(f"\nData Instance: {data_instance}\n\nTargets: {targets}\n")
+        
         return model_inputs
 
     # 处理数据集
