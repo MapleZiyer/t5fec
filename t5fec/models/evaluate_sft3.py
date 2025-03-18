@@ -32,71 +32,54 @@ def main():
     dataset = load_dataset('json', data_files={'validation': '../data/sft.jsonl'})
     
     # 数据预处理函数
+    # 预处理时确保数据格式正确
     def preprocess_function(examples):
         data_instance = f"mutation:'{examples['mutated']}'\n\nevidence:'{examples['gold_evidence']}'\n\n"
         targets = f"<answer>{examples['original']}</answer>"
 
-        # 使用tokenizer处理输入数据
         model_inputs = tokenizer(
             data_instance,
             max_length=4096,
             truncation=True,
             padding='max_length',
-            return_tensors=None  
+            return_tensors="pt"  # 直接返回 PyTorch 张量
         )
-        
+
         labels = tokenizer(
             targets,
-            max_length=4096,  # 修改为与输入相同的长度
+            max_length=256,
             truncation=True,
             padding='max_length',
-            return_tensors=None
+            return_tensors="pt"
         )
 
-        # 手动转换为张量并移动到正确的设备
-        device = model.device
-        input_ids = torch.tensor(model_inputs["input_ids"], dtype=torch.long, device=device)
-        attention_mask = torch.tensor(model_inputs["attention_mask"], dtype=torch.long, device=device)
-        labels_tensor = torch.tensor(labels["input_ids"], dtype=torch.long, device=device)
-        
-        # 更新模型输入
-        model_inputs["input_ids"] = input_ids
-        model_inputs["attention_mask"] = attention_mask
-        model_inputs["labels"] = labels_tensor
-
-        # 确保返回的是张量而不是列表
         return {
-            "input_ids": input_ids,
-            "attention_mask": attention_mask,
-            "labels": labels_tensor
+            "input_ids": model_inputs["input_ids"].squeeze(0),  
+            "attention_mask": model_inputs["attention_mask"].squeeze(0),
+            "labels": labels["input_ids"].squeeze(0)
         }
 
-    # 处理验证数据集
+    # 处理数据集
     processed_dataset = dataset['validation'].map(
         preprocess_function,
         remove_columns=dataset['validation'].column_names,
         desc="Processing validation dataset",
-        batched=True
+        batched=True  # 让 map() 处理 batch，防止数据被转换成 list
     )
 
-    # 推理并打印结果
-    logger.info("*** Starting validation ***")
-    
-    # 为了避免内存问题，使用一个小批次来进行推理
+    # 推理时确保 `input_ids` 是 tensor
     for idx, batch in enumerate(processed_dataset):
-        # 由于已经在预处理时将张量移动到了正确的设备，这里不需要再次移动
-        input_ids = batch["input_ids"].unsqueeze(0) if batch["input_ids"].dim() == 1 else batch["input_ids"]
-        attention_mask = batch["attention_mask"].unsqueeze(0) if batch["attention_mask"].dim() == 1 else batch["attention_mask"]
+        inputs = {key: value.to(model.device) for key, value in batch.items()}  # 这里不会再出错
 
-        with torch.no_grad():  # 禁用梯度计算
+        with torch.no_grad():
             outputs = model.generate(
-                input_ids,
-                attention_mask=attention_mask,
-                max_length=256,  # 生成的最大长度
-                num_beams=5,  # 使用束搜索
-                no_repeat_ngram_size=2,  # 避免重复n-gram
-                early_stopping=True  # 提前停止生成
+                inputs['input_ids'],
+                max_length=256,
+                num_beams=5,
+                no_repeat_ngram_size=2,
+                early_stopping=True
             )
+
 
         # 解码并打印结果
         generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)

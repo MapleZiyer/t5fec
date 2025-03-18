@@ -253,6 +253,11 @@ def main():
                 rewards.append(0.05)
                 continue
 
+            if len(output_text)*1.0 / len(prompt_text) < 0.5 or len(output_text)*1.0 / len(prompt_text) > 2:
+                print(f"Format error: Answer too too short or too too long\n")
+                rewards.append(0.0)
+                continue
+
             # 标准化处理字符串，移除多余空格和换行符
             normalized_output = ' '.join(output_text.strip().split())
             normalized_prompt = ' '.join(prompt_text.strip().split())
@@ -289,7 +294,7 @@ def main():
 
             print(f"Similarity: {similarity},Rouge_f1:{rouge_f1},SARI:{results_sari},Final:{result_final}\n")
             if result_final < 0.3:
-                rewards.append(0.15)
+                rewards.append(similarity)
                 continue
             # 使用事实验证模块评估生成文本
             programs = program_generator.batch_generate_programs(output_text)
