@@ -248,8 +248,8 @@ def main():
                 rewards.append(0.0)
                 continue
 
-            if len(output_text)*1.0 / len(prompt_text) < 0.8:
-                print(f"Format error: Answer too short\n")
+            if len(output_text)*1.0 / len(prompt_text) < 0.8 or len(output_text)*1.0 / len(prompt_text) > 1.5:
+                print(f"Format error: Answer too short or too long\n")
                 rewards.append(0.05)
                 continue
 
