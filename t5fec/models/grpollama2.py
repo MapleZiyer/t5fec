@@ -153,7 +153,7 @@ def main():
     # 数据预处理函数
     def preprocess_function(examples):
         prompt = """
-        You are a feature error correction assistant. The user provides an incorrect statement, and you need to correct it. Evidence for correcting this incorrect statement will be provided to you, and you must use the given evidence to revise the incorrect statement. Only correct the erroneous parts of the sentence while keeping the rest intact. The original meaning of the sentence must not be changed.The revised statement should not differ significantly in semantics and format from the original statement.
+        You are a feature error correction assistant. The user provides an incorrect statement, and you need to correct it. Evidence for correcting this incorrect statement will be provided to you, and you must use the given evidence to revise the incorrect statement. Only correct the erroneous parts of the sentence while keeping the rest intact. All the information contained in the original sentence must be retained and cannot be deleted, only modified.The corrected sentence must not be exactly the same as the original sentence.The original meaning of the sentence must not be changed.The revised statement should not differ significantly in semantics and format from the original statement.
         You must first think through the reasoning process in your mind before providing the user with the answer. The reasoning process and the answer should be enclosed within the <think></think> and <answer></answer> tags, respectively, i.e., <think> reasoning process here </think><answer> answer here </answer>.
         All your outputs must be wrapped in tags. The thought process should be enclosed in <think></think>, and the final result should be enclosed in <answer></answer>. First, output the reasoning process, then output the final answer.The two pairs of tags must both be output.Each tag pair can and must appear only once.Tags cannot be nested.
         User:'{original_statement}'.Evidence:'{evidence}' Assistant:
@@ -248,7 +248,12 @@ def main():
                 rewards.append(0.0)
                 continue
 
-            if output_text.strip() == prompt_text.strip():
+            # 标准化处理字符串，移除多余空格和换行符
+            normalized_output = ' '.join(output_text.strip().split())
+            normalized_prompt = ' '.join(prompt_text.strip().split())
+            
+            if normalized_output == normalized_prompt:
+                print(f"Output is exactly the same as input\n")
                 rewards.append(0.0)
                 continue
 
