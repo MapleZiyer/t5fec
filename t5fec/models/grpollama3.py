@@ -152,10 +152,7 @@ def main():
 
     # 数据预处理函数
     def preprocess_function(examples):
-        data_instance = {
-            "src": examples["mutated"],
-            "evidence": examples['gold_evidence']
-        }
+        data_instance = f"mutation:'{examples['claim']}'\n\nevidence:'{examples['evidence']}'\n\n"
 
         model_inputs = tokenizer(
             data_instance,
@@ -197,10 +194,11 @@ def main():
         for output, prompt in zip(completions, prompts):
             output_text = output if isinstance(output, str) else str(output).strip()
 
-            prompt_text = prompt["src"]
-            evidence = prompt["evidence"]
+            prompt_text = prompt.split("mutation:'")[1].split("'\n\nevidence:'")[0].strip()
+            evidence = prompt.split("evidence:'")[1].split("'\n\n")[0].strip()
 
             print(f"\nOrginal:{prompt_text}\n\n")
+            print(f"\nEvidence:{evidence}\n\n")
             print(f"Model Output:\n{output_text}\n\n")
 
             # 检查格式是否正确 - 必须先有<think></think>，然后再有<answer></answer>
