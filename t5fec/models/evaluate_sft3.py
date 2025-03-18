@@ -73,6 +73,7 @@ def main():
         preprocess_function,
         remove_columns=dataset['validation'].column_names,
         desc="Processing validation dataset",
+        batched=True
     )
 
     # 推理并打印结果
