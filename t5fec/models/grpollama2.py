@@ -49,7 +49,7 @@ class GRPOScriptArguments:
     )
 
 def main():
-    checkpoint_dir="../checkpoints/llama-3.2-1b-instruct-grpo"
+    checkpoint_dir="../checkpoints/Llama-3.2-1B-Instruct"
     # 训练参数设置
     training_args = transformers.TrainingArguments(
         output_dir="../checkpoints/llama-3.2-1b-instruct-grpo",
