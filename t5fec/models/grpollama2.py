@@ -289,7 +289,7 @@ def main():
 
             print(f"Similarity: {similarity},Rouge_f1:{rouge_f1},SARI:{results_sari},Final:{result_final}\n")
             if result_final < 0.3:
-                rewards.append(result_final / 2)
+                rewards.append(0.15)
                 continue
             # 使用事实验证模块评估生成文本
             programs = program_generator.batch_generate_programs(output_text)
