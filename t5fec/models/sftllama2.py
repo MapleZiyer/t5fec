@@ -51,6 +51,9 @@ def main():
     # 设置随机种子
     set_seed(42)
 
+    # 检查最新的checkpoint
+    last_checkpoint = None
+
     # 设置日志级别
     log_level = logging.INFO
     logger.setLevel(log_level)
