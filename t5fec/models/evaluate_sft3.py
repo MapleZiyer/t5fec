@@ -63,10 +63,13 @@ def main():
         model_inputs["input_ids"] = input_ids
         model_inputs["attention_mask"] = attention_mask
         model_inputs["labels"] = labels_tensor
-        # 可以选择打印数据实例和目标，以确保正确性
-        print(f"\nData Instance: {data_instance}\n\nTargets: {targets}\n")
 
-        return model_inputs
+        # 确保返回的是张量而不是列表
+        return {
+            "input_ids": input_ids,
+            "attention_mask": attention_mask,
+            "labels": labels_tensor
+        }
 
     # 处理验证数据集
     processed_dataset = dataset['validation'].map(
@@ -82,11 +85,8 @@ def main():
     # 为了避免内存问题，使用一个小批次来进行推理
     for idx, batch in enumerate(processed_dataset):
         # 由于已经在预处理时将张量移动到了正确的设备，这里不需要再次移动
-        inputs = batch
-
-        # 确保输入张量维度正确
-        input_ids = inputs['input_ids'].unsqueeze(0) if inputs['input_ids'].dim() == 1 else inputs['input_ids']
-        attention_mask = inputs['attention_mask'].unsqueeze(0) if inputs['attention_mask'].dim() == 1 else inputs['attention_mask']
+        input_ids = batch["input_ids"].unsqueeze(0) if batch["input_ids"].dim() == 1 else batch["input_ids"]
+        attention_mask = batch["attention_mask"].unsqueeze(0) if batch["attention_mask"].dim() == 1 else batch["attention_mask"]
 
         with torch.no_grad():  # 禁用梯度计算
             outputs = model.generate(
@@ -100,7 +100,7 @@ def main():
 
         # 解码并打印结果
         generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        original_text = tokenizer.decode(inputs['labels'][0], skip_special_tokens=True)
+        original_text = tokenizer.decode(batch['labels'][0], skip_special_tokens=True)
 
         logger.info(f"Generated: {generated_text}")
         logger.info(f"Original: {original_text}")
