@@ -117,6 +117,7 @@ def main():
     # 处理数据集
     processed_dataset = dataset['train'].map(
         preprocess_function,
+        remove_columns=dataset['train'].column_names,
         desc="Processing dataset",
     )
 
