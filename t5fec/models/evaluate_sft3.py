@@ -42,22 +42,23 @@ def main():
             max_length=4096,
             truncation=True,
             padding='max_length',
-            return_tensors="pt"  # 直接返回 PyTorch 张量
+            return_tensors=None  # 这里改成 None，确保返回 list
         )
 
         labels = tokenizer(
             targets,
-            max_length=4096,
+            max_length=256,
             truncation=True,
             padding='max_length',
-            return_tensors="pt"
+            return_tensors=None
         )
 
         return {
-            "input_ids": model_inputs["input_ids"].squeeze(0),  
-            "attention_mask": model_inputs["attention_mask"].squeeze(0),
-            "labels": labels["input_ids"].squeeze(0)
+            "input_ids": model_inputs["input_ids"],  
+            "attention_mask": model_inputs["attention_mask"],
+            "labels": labels["input_ids"]
         }
+
 
     # 处理数据集
     processed_dataset = dataset['validation'].map(
@@ -69,8 +70,10 @@ def main():
 
     # 推理时确保 `input_ids` 是 tensor
     for idx, batch in enumerate(processed_dataset):
-        inputs = {key: value.to(model.device) for key, value in batch.items()}  # 这里不会再出错
-
+        inputs = {
+            key: torch.tensor(value, dtype=torch.long).to(model.device)  
+            for key, value in batch.items()
+        }
         with torch.no_grad():
             outputs = model.generate(
                 inputs['input_ids'],
