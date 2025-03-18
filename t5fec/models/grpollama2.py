@@ -49,7 +49,7 @@ class GRPOScriptArguments:
     )
 
 def main():
-    checkpoint_dir="../checkpoints/Llama-3.2-1B-Instruct"
+    checkpoint_dir="../checkpoints/Llama-3.2-1B-Instruct333"
     # 训练参数设置
     training_args = transformers.TrainingArguments(
         output_dir="../checkpoints/llama-3.2-1b-instruct-grpo",
@@ -154,8 +154,8 @@ def main():
     def preprocess_function(examples):
         prompt = """
         You are a feature error correction assistant. The user provides an incorrect statement, and you need to correct it. Evidence for correcting this incorrect statement will be provided to you, and you must use the given evidence to revise the incorrect statement. Only correct the erroneous parts of the sentence while keeping the rest intact. The original meaning of the sentence must not be changed.The revised statement should not differ significantly in semantics and format from the original statement.
-        You must first think through the reasoning process in your mind before providing the user with the answer. The final answer should be enclosed within the <answer></answer> tags, respectively, i.e.,<answer> answer here </answer>.
-        First, output the reasoning process, then output the final answer.The final answer should be enclosed in <answer></answer>.<answer></answer> tags pair can and must appear only once.
+        You must first think through the reasoning process in your mind before providing the user with the answer. The reasoning process and the answer should be enclosed within the <think></think> and <answer></answer> tags, respectively, i.e., <think> reasoning process here </think><answer> answer here </answer>.
+        All your outputs must be wrapped in tags. The thought process should be enclosed in <think></think>, and the final result should be enclosed in <answer></answer>. First, output the reasoning process, then output the final answer.The two pairs of tags must both be output.Each tag pair can and must appear only once.Tags cannot be nested.
         User:'{original_statement}'.Evidence:'{evidence}' Assistant:
         """
         inputs = prompt.format(evidence=examples['evidence'], original_statement=examples['claim'])
@@ -211,18 +211,32 @@ def main():
             print(f"Model Output:\n{output_text}\n\n")
 
             # 检查格式是否正确 - 必须先有<think></think>，然后再有<answer></answer>
+            think_start = output_text.find('<think>')
+            think_end = output_text.find('</think>')
             answer_start = output_text.find('<answer>')
             answer_end = output_text.find('</answer>')
             
             # 检查所有标签是否存在且顺序正确
-            if (answer_start == -1 or answer_end == -1 or answer_start > answer_end):
+            if (think_start == -1 or think_end == -1 or answer_start == -1 or answer_end == -1 or
+                think_start > think_end or answer_start > answer_end or
+                think_end > answer_start):
                 print(f"Format error: Tags missing or in wrong order\n")
                 rewards.append(0.0)
                 continue
 
             # 检查每个标签是否只出现一次
-            if (output_text.count('<answer>') != 1 or output_text.count('</answer>') != 1):
+            if (output_text.count('<think>') != 1 or output_text.count('</think>') != 1 or
+                output_text.count('<answer>') != 1 or output_text.count('</answer>') != 1):
                 print(f"Format error: Each tag should appear exactly once\n")
+                rewards.append(0.0)
+                continue
+
+            # 检查所有文本是否都在标签内
+            text_before_think = output_text[:think_start].strip()
+            text_between_tags = output_text[think_end + len('</think>'):answer_start].strip()
+            text_after_answer = output_text[answer_end + len('</answer>'):].strip()
+            if text_before_think or text_between_tags or text_after_answer:
+                print(f"Format error: All text must be wrapped in tags\n")
                 rewards.append(0.0)
                 continue
                 
