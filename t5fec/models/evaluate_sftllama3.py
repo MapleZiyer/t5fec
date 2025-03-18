@@ -49,7 +49,8 @@ def main():
         # 解码输出
         generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
-        print(f"generated_text:{generated_text}")
+        print(f"\ninput_text:\n{input_text}\n")
+        print(f"\ngenerated_text:\n{generated_text}\n")
         
         # 提取<answer>标签中的内容
         start_idx = generated_text.find('<answer>')
