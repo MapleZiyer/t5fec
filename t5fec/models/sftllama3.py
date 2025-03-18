@@ -85,7 +85,7 @@ def main():
     # 加载数据集
     dataset = load_dataset(
         'json',
-        data_files={'train': '../data/gold_negate_8-shot_2-retrieved-evidence_train_gpt-3.5-turbo.jsonl'}
+        data_files={'train': '../data/sft.jsonl'}
     )
 
     # 数据预处理函数
