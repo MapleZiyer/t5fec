@@ -90,10 +90,7 @@ def main():
 
     # 数据预处理函数
     def preprocess_function(examples):
-        data_instance = {
-            "src": examples["mutated"],
-            "evidence": examples['gold_evidence']
-        }
+        data_instance = f"mutation:'{examples['mutated']}'\n\nevidence:'{examples['gold_evidence']}'\n\n"
 
         targets = f"<answer>{examples['original']}</answer>"
 
@@ -114,7 +111,7 @@ def main():
         )
         
         model_inputs['labels'] = labels['input_ids']
-
+        print(f"\nData Instance: {data_instance}\n\nTargets: {targets}\n")
         return model_inputs
 
     # 处理数据集
