@@ -1,24 +1,14 @@
 import logging
 import os
 import sys
-
-import datasets
 import torch
-import transformers
+from transformers import AutoModelForCausalLM, AutoTokenizer, TrainingArguments, set_seed
 from datasets import load_dataset
-from transformers import set_seed
 from transformers.trainer_utils import get_last_checkpoint
-from transformers import AutoModelForCausalLM, AutoTokenizer
+from trl import SFTTrainer
+import wandb
 
-from trl import (
-    SFTTrainer,
-    get_kbit_device_map,
-    get_peft_config,
-    get_quantization_config,
-)
-
-import wandb  # 添加 wandb 导入
-
+# 配置日志
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
@@ -27,15 +17,27 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def main():
-    # 训练参数设置
-    training_args = transformers.TrainingArguments(
-        output_dir="../checkpoints/Llama-3.2-1B-Instruct4",
+    # 设置随机种子
+    set_seed(42)
+    
+    # 指定预训练模型的路径或名称
+    model_name = "meta-llama/Llama-3.2-1B-Instruct"
+    
+    # 加载模型和分词器
+    model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16)
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer.pad_token = tokenizer.eos_token  # 设置填充token为eos token
+    tokenizer.padding_side = "right"           # 对于Llama模型，通常使用右侧填充
+
+    # 设置训练参数
+    training_args = TrainingArguments(
+        output_dir="./checkpoints/Llama-3.2-1B-Instruct-sft5",
         learning_rate=2e-5,
         num_train_epochs=1,
-        per_device_train_batch_size=4,  # 每个GPU的batch size
-        gradient_accumulation_steps=8,  # 梯度累积步数
-        gradient_checkpointing=True,
-        bf16=True,
+        per_device_train_batch_size=4,        # 每个GPU的batch size
+        gradient_accumulation_steps=8,          # 梯度累积步数
+        gradient_checkpointing=True,            # 开启梯度检查点，节省显存
+        bf16=True,                              # 使用bf16训练（需硬件支持）
         logging_steps=10,
         save_strategy="epoch",
         evaluation_strategy="no",
@@ -43,59 +45,23 @@ def main():
         do_train=True,
         remove_unused_columns=False,
         report_to=["wandb"],
-        run_name="Llama-3.2-1B-Instruct-run",
-        # 单GPU训练配置
-        fp16=False,  # 使用bf16而不是fp16
+        run_name="Llama-3.2-1B-Instruct-sft-run",
+        fp16=False,  # 使用bf16而非fp16
     )
 
-    # 设置随机种子
-    set_seed(42)
-
-    # 检查最新的checkpoint
+    # 检查是否有已存在的checkpoint，便于恢复训练
     last_checkpoint = None
 
-    # 设置日志级别
-    log_level = logging.INFO
-    logger.setLevel(log_level)
-    datasets.utils.logging.set_verbosity(log_level)
-    transformers.utils.logging.set_verbosity(log_level)
-    transformers.utils.logging.enable_default_handler()
-    transformers.utils.logging.enable_explicit_format()
+    # 加载训练数据集，这里假设数据集为JSON Lines格式，包含 "mutated"、"original"、"gold_evidence" 字段
+    dataset = load_dataset('json', data_files={'train': './data/sft.jsonl'})
 
-    # 加载模型和分词器
-    model_name = "meta-llama/Llama-3.2-1B-Instruct"
-    
-    # 设置模型加载参数
-    torch_dtype = torch.bfloat16 if training_args.bf16 else torch.float32
-    model_kwargs = dict(
-        torch_dtype=torch_dtype,
-        use_cache=False if training_args.gradient_checkpointing else True
-    )
-    
-    # 加载模型实例
-    model = AutoModelForCausalLM.from_pretrained(
-        model_name,
-        **model_kwargs
-    )
-
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    tokenizer.pad_token = tokenizer.eos_token
-    tokenizer.padding_side = "right"  # Llama使用右侧填充
-
-    # 加载数据集
-    dataset = load_dataset(
-        'json',
-        data_files={'train': '../data/sft.jsonl'}
-    )
-
-    # 数据预处理函数
+    # 数据预处理函数：构造 prompt，并使用 <answer> 标签包裹目标答案
     def preprocess_function(examples):
+        # 构造输入 prompt，可根据需求修改
         data_instance = f"mutation:'{examples['mutated']}'\n\nevidence:'{examples['gold_evidence']}'\n\n"
-        
-        # 确保目标数据正确
         targets = f"<answer>{examples['original']}</answer>"
-
-        # 使用tokenizer处理输入和目标文本
+        
+        # 使用 tokenizer 编码输入和目标；这里返回列表格式，便于后续 Dataset 处理
         model_inputs = tokenizer(
             data_instance,
             max_length=4096,
@@ -103,7 +69,6 @@ def main():
             padding='max_length',
             return_tensors=None
         )
-        
         labels = tokenizer(
             targets,
             max_length=256,
@@ -112,29 +77,20 @@ def main():
             return_tensors=None
         )
         
-        # 手动转换为张量并确保维度正确
-        input_ids = torch.tensor(model_inputs["input_ids"], dtype=torch.long)
-        attention_mask = torch.tensor(model_inputs["attention_mask"], dtype=torch.long)
-        labels_tensor = torch.tensor(labels["input_ids"], dtype=torch.long)
-        
-        # 更新模型输入
-        model_inputs["input_ids"] = input_ids
-        model_inputs["attention_mask"] = attention_mask
-        model_inputs["labels"] = labels_tensor
+        return {
+            "input_ids": model_inputs["input_ids"],
+            "attention_mask": model_inputs["attention_mask"],
+            "labels": labels["input_ids"]
+        }
 
-        # 可以选择打印数据实例和目标，以确保正确性
-        print(f"\nData Instance: {data_instance}\n\nTargets: {targets}\n")
-        
-        return model_inputs
-
-    # 处理数据集
+    # 处理数据集，移除原始字段，保留预处理后的数据
     processed_dataset = dataset['train'].map(
         preprocess_function,
         remove_columns=dataset['train'].column_names,
-        desc="Processing dataset",
+        desc="Processing training dataset"
     )
 
-    # 初始化SFT训练器
+    # 初始化 SFTTrainer
     trainer = SFTTrainer(
         model=model,
         args=training_args,
@@ -142,9 +98,11 @@ def main():
         tokenizer=tokenizer
     )
 
-    # 开始训练
-    logger.info("*** Starting training ***")
+    # 初始化 wandb 日志
     wandb.init(project="Llama-3.2-1B-Instruct-sft", name=training_args.run_name)
+    
+    # 开始训练
+    logger.info("*** Starting SFT training ***")
     train_result = trainer.train(resume_from_checkpoint=last_checkpoint)
     metrics = train_result.metrics
     metrics["train_samples"] = len(processed_dataset)
@@ -157,11 +115,10 @@ def main():
     trainer.save_model(training_args.output_dir)
     logger.info(f"Model saved to {training_args.output_dir}")
 
-    # 恢复k,v cache用于快速推理
+    # 恢复 k,v cache 以便于快速推理（训练后可以开启）
     trainer.model.config.use_cache = True
     trainer.model.config.save_pretrained(training_args.output_dir)
 
-    # 完成wandb日志
     wandb.finish()
 
 if __name__ == "__main__":
