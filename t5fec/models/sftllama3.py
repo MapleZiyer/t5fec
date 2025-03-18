@@ -53,7 +53,7 @@ def main():
     last_checkpoint = None
 
     # 加载训练数据集，这里假设数据集为JSON Lines格式，包含 "mutated"、"original"、"gold_evidence" 字段
-    dataset = load_dataset('json', data_files={'train': './data/sft.jsonl'})
+    dataset = load_dataset('json', data_files={'train': '../data/sft.jsonl'})
 
     # 数据预处理函数：构造 prompt，并使用 <answer> 标签包裹目标答案
     def preprocess_function(examples):
