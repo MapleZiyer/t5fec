@@ -101,7 +101,7 @@ def main():
             max_length=4096,
             truncation=True,
             padding='max_length',
-            return_tensors=None
+            return_tensors="pt"
         )
         
         labels = tokenizer(
@@ -109,7 +109,7 @@ def main():
             max_length=256,
             truncation=True,
             padding='max_length',
-            return_tensors=None
+            return_tensors="pt"
         )
         
         # 将标签添加到模型输入中

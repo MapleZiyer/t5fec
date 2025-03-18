@@ -1,87 +1,90 @@
 import logging
-import os
 import sys
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
-from sentence_transformers import SentenceTransformer
-from rouge_score import rouge_scorer
-from evaluate import load
-from fc.program_generator import Reasoning_Program_Generator
-from fc.program_execution import Program_Execution
+from datasets import load_dataset
+from transformers import set_seed
+import wandb
 
 logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
     handlers=[logging.StreamHandler(sys.stdout)],
-    level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
-def evaluate_model(model_path="../checkpoints/Llama-3.2-1B-Instruct3"):
-    # 加载模型和分词器
-    model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16).to('cuda')
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
-    tokenizer.pad_token = tokenizer.eos_token
-    tokenizer.padding_side = "right"
+def main():
+    # 设置随机种子
+    set_seed(42)
 
+    # 加载训练后的模型和分词器
+    model_name = "../checkpoints/Llama-3.2-1B-Instruct4"  # 你训练后保存的模型路径
+    model = AutoModelForCausalLM.from_pretrained(model_name)
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-    # 从sft.jsonl加载测试用例
-    import json
-    test_cases = []
-    with open('../data/sft.jsonl', 'r') as f:
-        for i, line in enumerate(f):
-            if i >= 5:  # 只取前5个测试用例
-                break
-            data = json.loads(line)
-            test_case = {
-                "evidence": data['gold_evidence'],
-                "claim": data['mutated']
-            }
-            test_cases.append(test_case)
+    # 配置模型
+    model.eval()  # 设置为评估模式
+    model.config.pad_token_id = tokenizer.eos_token_id  # 设置pad token为eos token
+
+    # 加载验证数据集
+    dataset = load_dataset('json', data_files={'validation': '../data/sft.jsonl'})
     
-    model.eval()
-    for test_case in test_cases:
-        # 构建输入
-        prompt = f"mutation:'{test_case['claim']}'evidence:'{test_case['evidence']}'"
+    # 数据预处理函数
+    def preprocess_function(examples):
+        data_instance = f"mutation:'{examples['mutated']}'\n\nevidence:'{examples['gold_evidence']}'\n\n"
+        targets = f"<answer>{examples['original']}</answer>"
+
+        # 使用tokenizer处理输入数据
+        model_inputs = tokenizer(
+            data_instance,
+            max_length=4096,
+            truncation=True,
+            padding='max_length',
+            return_tensors="pt"  # 返回PyTorch tensors
+        )
         
-        # 生成文本
-        inputs = tokenizer(prompt, return_tensors="pt", max_length=4096, truncation=True)
-        inputs = {k: v.to('cuda') for k, v in inputs.items()}
-        
-        with torch.no_grad():
+        labels = tokenizer(
+            targets,
+            max_length=256,
+            truncation=True,
+            padding='max_length',
+            return_tensors="pt"
+        )
+
+        model_inputs['labels'] = labels['input_ids']
+        return model_inputs
+
+    # 处理验证数据集
+    processed_dataset = dataset['validation'].map(
+        preprocess_function,
+        remove_columns=dataset['validation'].column_names,
+        desc="Processing validation dataset",
+    )
+
+    # 推理并打印结果
+    logger.info("*** Starting validation ***")
+    
+    # 为了避免内存问题，使用一个小批次来进行推理
+    for idx, batch in enumerate(processed_dataset):
+        inputs = {key: value.to(model.device) for key, value in batch.items()}
+
+        with torch.no_grad():  # 禁用梯度计算
             outputs = model.generate(
-                **inputs,
-                max_length=1024,
-                temperature=0.7,
-                num_return_sequences=1,
-                pad_token_id=tokenizer.eos_token_id
+                inputs['input_ids'],
+                max_length=256,  # 生成的最大长度
+                num_beams=5,  # 使用束搜索
+                no_repeat_ngram_size=2,  # 避免重复n-gram
+                early_stopping=True  # 提前停止生成
             )
-        
-        output_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
-        print(f"\nInput:\n{prompt}")
-        print(f"\nOutput:\n{output_text}")
-        
-        # 提取<answer>标签中的内容
-        answer_start = output_text.find('<answer>')
-        answer_end = output_text.find('</answer>')
-        if answer_start != -1 and answer_end != -1:
-            output_text = output_text[answer_start + len('<answer>'):answer_end].strip()
-        
-        # 2. ROUGE分数
-        scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
-        scores = scorer.score(test_case['claim'], output_text)
-        rouge_f1 = (scores['rouge1'].fmeasure + scores['rouge2'].fmeasure + scores['rougeL'].fmeasure) / 3
-        
-        # 3. SARI分数
-        sari = load("He-Xingwei/sari_metric")
-        results_sari = sari.compute(sources=[test_case['claim']], predictions=[output_text], references=[""])
-        sari_score = results_sari['sari']
-        
-        
-        # 输出评估结果
-        print(f"\n评估结果:")
-        print(f"ROUGE-F1: {rouge_f1:.4f}")
-        print(f"SARI: {sari_score:.4f}")
+
+        # 解码并打印结果
+        generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        original_text = tokenizer.decode(inputs['labels'][0], skip_special_tokens=True)
+
+        logger.info(f"Generated: {generated_text}")
+        logger.info(f"Original: {original_text}")
+
+    logger.info("*** Validation complete ***")
 
 if __name__ == "__main__":
-    evaluate_model()
+    main()
