@@ -211,32 +211,18 @@ def main():
             print(f"Model Output:\n{output_text}\n\n")
 
             # 检查格式是否正确 - 必须先有<think></think>，然后再有<answer></answer>
-            think_start = output_text.find('<think>')
-            think_end = output_text.find('</think>')
             answer_start = output_text.find('<answer>')
             answer_end = output_text.find('</answer>')
             
             # 检查所有标签是否存在且顺序正确
-            if (think_start == -1 or think_end == -1 or answer_start == -1 or answer_end == -1 or
-                think_start > think_end or answer_start > answer_end or
-                think_end > answer_start):
+            if (answer_start == -1 or answer_end == -1 or answer_start > answer_end):
                 print(f"Format error: Tags missing or in wrong order\n")
                 rewards.append(0.0)
                 continue
 
             # 检查每个标签是否只出现一次
-            if (output_text.count('<think>') != 1 or output_text.count('</think>') != 1 or
-                output_text.count('<answer>') != 1 or output_text.count('</answer>') != 1):
+            if (output_text.count('<answer>') != 1 or output_text.count('</answer>') != 1):
                 print(f"Format error: Each tag should appear exactly once\n")
-                rewards.append(0.0)
-                continue
-
-            # 检查所有文本是否都在标签内
-            text_before_think = output_text[:think_start].strip()
-            text_between_tags = output_text[think_end + len('</think>'):answer_start].strip()
-            text_after_answer = output_text[answer_end + len('</answer>'):].strip()
-            if text_before_think or text_between_tags or text_after_answer:
-                print(f"Format error: All text must be wrapped in tags\n")
                 rewards.append(0.0)
                 continue
                 
