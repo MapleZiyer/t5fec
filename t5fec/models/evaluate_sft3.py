@@ -67,12 +67,6 @@ def evaluate_model(model_path="../checkpoints/Llama-3.2-1B-Instruct3"):
         if answer_start != -1 and answer_end != -1:
             output_text = output_text[answer_start + len('<answer>'):answer_end].strip()
         
-        # 计算评估指标
-        # 1. 相似度
-        output_embedding = similarity_model.encode(output_text, convert_to_tensor=True, device='cuda')
-        target_embedding = similarity_model.encode(test_case['claim'], convert_to_tensor=True, device='cuda')
-        similarity = float(torch.nn.functional.cosine_similarity(output_embedding, target_embedding, dim=0))
-        
         # 2. ROUGE分数
         scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
         scores = scorer.score(test_case['claim'], output_text)
@@ -83,25 +77,11 @@ def evaluate_model(model_path="../checkpoints/Llama-3.2-1B-Instruct3"):
         results_sari = sari.compute(sources=[test_case['claim']], predictions=[output_text], references=[""])
         sari_score = results_sari['sari']
         
-        # 4. 事实验证
-        programs = program_generator.batch_generate_programs(output_text)
-        sample_data = {
-            "idx": 0,
-            "id": None,
-            "claim": output_text,
-            "gold": "",
-            "predicted_programs": [programs],
-            "evidence": test_case['evidence']
-        }
-        fact_check = program_executor.execute_on_dataset(sample_data)
         
         # 输出评估结果
         print(f"\n评估结果:")
-        print(f"相似度: {similarity:.4f}")
         print(f"ROUGE-F1: {rouge_f1:.4f}")
         print(f"SARI: {sari_score:.4f}")
-        print(f"事实验证: {'通过' if fact_check else '未通过'}")
-        print("-" * 50)
 
 if __name__ == "__main__":
     evaluate_model()
