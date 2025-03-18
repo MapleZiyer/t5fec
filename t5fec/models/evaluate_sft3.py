@@ -22,7 +22,9 @@ def main():
     model = AutoModelForCausalLM.from_pretrained(model_name)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
 
-    # 配置模型
+    # 配置模型并移动到CUDA设备
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
     model.eval()  # 设置为评估模式
     model.config.pad_token_id = tokenizer.eos_token_id  # 设置pad token为eos token
 
@@ -51,10 +53,11 @@ def main():
             return_tensors=None
         )
 
-        # 手动转换为张量并确保维度正确
-        input_ids = torch.tensor(model_inputs["input_ids"], dtype=torch.long)
-        attention_mask = torch.tensor(model_inputs["attention_mask"], dtype=torch.long)
-        labels_tensor = torch.tensor(labels["input_ids"], dtype=torch.long)
+        # 手动转换为张量并移动到正确的设备
+        device = model.device
+        input_ids = torch.tensor(model_inputs["input_ids"], dtype=torch.long, device=device)
+        attention_mask = torch.tensor(model_inputs["attention_mask"], dtype=torch.long, device=device)
+        labels_tensor = torch.tensor(labels["input_ids"], dtype=torch.long, device=device)
         
         # 更新模型输入
         model_inputs["input_ids"] = input_ids
@@ -77,7 +80,8 @@ def main():
     
     # 为了避免内存问题，使用一个小批次来进行推理
     for idx, batch in enumerate(processed_dataset):
-        inputs = {key: value.to(model.device) for key, value in batch.items()}
+        # 由于已经在预处理时将张量移动到了正确的设备，这里不需要再次移动
+        inputs = batch
 
         with torch.no_grad():  # 禁用梯度计算
             outputs = model.generate(
