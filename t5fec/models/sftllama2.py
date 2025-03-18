@@ -51,13 +51,6 @@ def main():
     # 设置随机种子
     set_seed(42)
 
-    # 检查最新的checkpoint
-    last_checkpoint = None
-    if os.path.isdir(training_args.output_dir):
-        last_checkpoint = get_last_checkpoint(training_args.output_dir)
-    if last_checkpoint is not None:
-        logger.info(f"Checkpoint detected, resuming training at {last_checkpoint}.")
-
     # 设置日志级别
     log_level = logging.INFO
     logger.setLevel(log_level)
