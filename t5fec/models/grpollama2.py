@@ -276,8 +276,8 @@ def main():
             sari = load("He-Xingwei/sari_metric")
             results_sari = sari.compute(sources=[prompt_text], predictions=[output_text], references=[[""]])
             results_sari = results_sari['sari']
-            result_final = similarity*0.3*0.1 + rouge1_f1*0.5*0.3 + results_sari*0.005*0.6
-            if normalized_output == normalized_prompt or (rouge_f1 > 0.95 and similarity>0.95):
+            result_final = rouge1_f1*0.5*0.3 + results_sari*0.005*0.7
+            if normalized_output == normalized_prompt or (rouge_f1 > 0.8 and similarity>0.8) or similarity>0.9:
                 print(f"Output is exactly the same as input\n")
                 rewards.append(0.0)
                 continue
@@ -304,7 +304,7 @@ def main():
             if prediction:
                 rewards.append(1.0)
             else:
-                rewards.append(0.5 if result_final > 0.5 else result_final)
+                rewards.append(0.3)
             print(f"\nRewards:{rewards}\n")
         return torch.tensor(rewards, requires_grad=True).clone().detach().requires_grad_(True)
 
