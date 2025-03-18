@@ -271,7 +271,7 @@ def main():
             sari = load("He-Xingwei/sari_metric")
             results_sari = sari.compute(sources=[prompt_text], predictions=[output_text], references=[[""]])
             results_sari = results_sari['sari']
-            result_final = similarity*0.375*0.2 + rouge1_f1*0.4 + results_sari*0.005*0.4
+            result_final = similarity*0.375*0.1 + rouge1_f1*0.5*0.45 + results_sari*0.005*0.45
             print(f"Similarity: {similarity},Rouge_f1:{rouge_f1},SARI:{results_sari},Final:{result_final}\n")
             if result_final < 0.3 or output_text == prompt_text:
                 rewards.append(result_final)
