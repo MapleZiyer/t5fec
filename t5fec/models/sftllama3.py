@@ -22,7 +22,7 @@ def preprocess_function(examples):
     inputs["labels"] = labels["input_ids"]
     return inputs
 
-dataset = train_dataset.map(preprocess_function)
+dataset = train_dataset["train"].map(preprocess_function)
 
 # 加载模型
 model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16, device_map="auto")
