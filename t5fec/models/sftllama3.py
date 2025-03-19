@@ -17,7 +17,7 @@ def preprocess_function(examples):
     target = f"<answer>{examples['original']}</answer>"
 
     inputs = tokenizer(prompt, padding=True, truncation=True, max_length=4096)
-    labels = tokenizer(target, padding=True, truncation=True, max_length=256)
+    labels = tokenizer(target, padding=True, truncation=True, max_length=4096)
 
     inputs["labels"] = labels["input_ids"]
     return inputs

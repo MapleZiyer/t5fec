@@ -9,7 +9,6 @@ export CUDA_VISIBLE_DEVICES=4
 export WANDB_PROJECT="llama-3.2-1b-instruct-grpo"      # 设置wandb项目名称
 export WANDB_ENTITY="maplesakura-tianjin-university"   # 设置wandb用户名
 
-
 # 打印训练配置信息
 echo "Starting training with following configuration:"
 echo "CUDA_VISIBLE_DEVICES: ${CUDA_VISIBLE_DEVICES}"
