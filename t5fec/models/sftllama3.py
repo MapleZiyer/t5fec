@@ -9,6 +9,13 @@ model_name = "meta-llama/Llama-3.2-1B-Instruct"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token  # 确保有填充token
 
+# 加载模型
+model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16, device_map="auto")
+
+tokenizer.add_tokens(['__ANSWER__'])
+model.resize_token_embeddings(len(tokenizer))
+print(f'\n\n{tokenizer.tokenize("__ANSWER__")}\n\n')
+
 # 加载数据集
 train_dataset = load_dataset("json", data_files={"train": "../data/sft.jsonl"})
 
@@ -23,13 +30,6 @@ def preprocess_function(examples):
     return inputs
 
 dataset = train_dataset["train"].map(preprocess_function)
-
-# 加载模型
-model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16, device_map="auto")
-
-tokenizer.add_tokens(['__ANSWER__'])
-model.resize_token_embeddings(len(tokenizer))
-print(f'\n\n{tokenizer.tokenize("__ANSWER__")}\n\n')
 
 # 训练参数
 training_args = TrainingArguments(
