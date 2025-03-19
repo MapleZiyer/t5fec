@@ -46,7 +46,7 @@ def main():
                 pad_token_id=tokenizer.eos_token_id
             )
         
-        # 解码输出
+        # 解码输出 
         generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
 
         print(f"\ninput_text:\n{input_text}\n")
