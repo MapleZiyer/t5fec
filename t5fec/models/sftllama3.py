@@ -44,7 +44,11 @@ training_args = TrainingArguments(
 )
 
 # 数据整理器
-collator = DataCollatorForCompletionOnlyLM(tokenizer=tokenizer, mlm=False)
+collator = DataCollatorForCompletionOnlyLM(
+    tokenizer=tokenizer,
+    mlm=False,
+    response_template=""
+)
 
 # SFT 训练器
 trainer = SFTTrainer(
