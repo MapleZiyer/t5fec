@@ -13,7 +13,7 @@ tokenizer.pad_token = tokenizer.eos_token  # 确保有填充token
 train_dataset = load_dataset("json", data_files={"train": "../data/sft.jsonl"})
 
 def preprocess_function(examples):
-    inputs = f"mutation:'{examples['mutated']}'\n\nevidence:'{examples['gold_evidence']}'\n\nanswer:<answer>{examples['original']}</answer>"
+    inputs = f"mutation:'{examples['mutated']}'\n\nevidence:'{examples['gold_evidence']}'\n\nanswer: <answer>{examples['original']}</answer>"
     #labels = f"<answer>{examples['original']}</answer>"
 
     inputs = tokenizer(inputs, max_length=4096, padding="max_length", truncation=True)
@@ -47,7 +47,7 @@ training_args = TrainingArguments(
 collator = DataCollatorForCompletionOnlyLM(
     tokenizer=tokenizer,
     mlm=False,
-    response_template="answer:"
+    response_template="answer: "
 )
 
 # SFT 训练器
