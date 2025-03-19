@@ -47,7 +47,7 @@ def main():
             )
         
         # 解码输出
-        generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+        generated_text = tokenizer.decode(outputs)
 
         print(f"\ninput_text:\n{input_text}\n")
         print(f"\ngenerated_text:\n{generated_text}\n")
