@@ -9,6 +9,8 @@ model_name = "meta-llama/Llama-3.2-1B-Instruct"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token  # 确保有填充token
 
+print(f'\n\n{tokenizer.tokenize("[answer]")}\n\n')
+
 # 加载数据集
 train_dataset = load_dataset("json", data_files={"train": "../data/sft.jsonl"})
 
