@@ -16,8 +16,8 @@ def preprocess_function(examples):
     prompt = f"mutation:'{examples['mutated']}'\n\nevidence:'{examples['gold_evidence']}'\n\n"
     target = f"<answer>{examples['original']}</answer>"
 
-    inputs = tokenizer(prompt, padding=True, truncation=True, max_length=4096)
-    labels = tokenizer(target, padding=True, truncation=True, max_length=4096)
+    inputs = tokenizer(prompt, padding="max_length", truncation=True, max_length=4096)
+    labels = tokenizer(target, padding="max_length", truncation=True, max_length=4096)
 
     inputs["labels"] = labels["input_ids"]
     return inputs
