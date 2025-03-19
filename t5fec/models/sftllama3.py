@@ -9,13 +9,14 @@ model_name = "meta-llama/Llama-3.2-1B-Instruct"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token  # 确保有填充token
 
+tokenizer.add_tokens(['__ANSWER__'])
 print(f'\n\n{tokenizer.tokenize("__ANSWER__")}\n\n')
 
 # 加载数据集
 train_dataset = load_dataset("json", data_files={"train": "../data/sft.jsonl"})
 
 def preprocess_function(examples):
-    inputs = f"mutation:'{examples['mutated']}'\n\nevidence:'{examples['gold_evidence']}'\n\n[answer]<answer>{examples['original']}</answer>"
+    inputs = f"mutation:'{examples['mutated']}'\n\nevidence:'{examples['gold_evidence']}'\n\n__ANSWER__<answer>{examples['original']}</answer>"
     #labels = f"<answer>{examples['original']}</answer>"
 
     inputs = tokenizer(inputs, max_length=4096, padding="max_length", truncation=True)
@@ -49,7 +50,7 @@ training_args = TrainingArguments(
 collator = DataCollatorForCompletionOnlyLM(
     tokenizer=tokenizer,
     mlm=False,
-    response_template="[answer]"
+    response_template="__ANSWER__"
 )
 
 # SFT 训练器
