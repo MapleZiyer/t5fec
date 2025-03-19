@@ -5,13 +5,12 @@ import torch
 
 # 指定模型和数据集
 model_name = "meta-llama/Llama-3.2-1B-Instruct"
-dataset_name = "../data/sft.jsonl"
 
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 tokenizer.pad_token = tokenizer.eos_token  # 确保有填充token
 
 # 加载数据集
-train_dataset = load_dataset("json", dataset_name, split="train")
+train_dataset = load_dataset("json", data_files={"train": "../data/sft.jsonl"})
 
 def preprocess_function(examples):
     prompt = f"mutation:'{examples['mutated']}'\n\nevidence:'{examples['gold_evidence']}'\n\n"
