@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     # 加载模型和分词器
-    model_path = "../checkpoints/Llama-3.2-1B-Instruct5"
+    model_path = "../checkpoints/Llama-3.2-1B-Instruct-sft5"
     model = AutoModelForCausalLM.from_pretrained(model_path)
     tokenizer = AutoTokenizer.from_pretrained(model_path)
     
