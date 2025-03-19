@@ -31,7 +31,7 @@ def main():
 
     # 设置训练参数
     training_args = TrainingArguments(
-        output_dir="./checkpoints/Llama-3.2-1B-Instruct-sft5",
+        output_dir="/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft3",
         learning_rate=2e-5,
         num_train_epochs=1,
         per_device_train_batch_size=4,        # 每个GPU的batch size
