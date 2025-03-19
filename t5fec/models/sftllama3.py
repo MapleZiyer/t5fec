@@ -14,13 +14,13 @@ train_dataset = load_dataset("json", data_files={"train": "../data/sft.jsonl"})
 
 def preprocess_function(examples):
     inputs = f"mutation:'{examples['mutated']}'\n\nevidence:'{examples['gold_evidence']}'\n\nanswer:<answer>{examples['original']}</answer>"
-    labels = f"<answer>{examples['original']}</answer>"
+    #labels = f"<answer>{examples['original']}</answer>"
 
     inputs = tokenizer(inputs, max_length=4096, padding="max_length", truncation=True)
 
-    labels = tokenizer(labels, max_length=4096, padding="max_length", truncation=True)
+    #labels = tokenizer(labels, max_length=4096, padding="max_length", truncation=True)
 
-    return {"input_ids": inputs["input_ids"], "labels": labels["input_ids"]}
+    return {"input_ids": inputs["input_ids"], "labels": inputs["input_ids"].copy()}
 
 dataset = train_dataset["train"].map(preprocess_function)
 
