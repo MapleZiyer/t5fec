@@ -13,14 +13,14 @@ tokenizer.pad_token = tokenizer.eos_token  # 确保有填充token
 train_dataset = load_dataset("json", data_files={"train": "../data/sft.jsonl"})
 
 def preprocess_function(examples):
-    prompt = f"mutation:'{examples['mutated']}'\n\nevidence:'{examples['gold_evidence']}'\n\n"
-    target = f"<answer>{examples['original']}</answer>"
+    inputs = f"mutation:'{examples['mutated']}'\n\nevidence:'{examples['gold_evidence']}'\n\nanswer:<answer>{examples['original']}</answer>"
+    labels = f"<answer>{examples['original']}</answer>"
 
-    inputs = tokenizer(prompt, max_length=4096, padding="max_length", truncation=True)
-    labels = tokenizer(target, max_length=4096, padding="max_length", truncation=True)
+    inputs = tokenizer(inputs, max_length=4096, padding="max_length", truncation=True)
 
-    inputs["labels"] = labels["input_ids"]
-    return inputs
+    labels = tokenizer(labels, max_length=4096, padding="max_length", truncation=True)
+
+    return {"input_ids": inputs["input_ids"], "labels": labels["input_ids"]}
 
 dataset = train_dataset["train"].map(preprocess_function)
 
@@ -47,7 +47,7 @@ training_args = TrainingArguments(
 collator = DataCollatorForCompletionOnlyLM(
     tokenizer=tokenizer,
     mlm=False,
-    response_template=""
+    response_template="answer:"
 )
 
 # SFT 训练器
