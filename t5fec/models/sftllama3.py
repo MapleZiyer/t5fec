@@ -18,9 +18,9 @@ def preprocess_function(examples):
 
     inputs = tokenizer(inputs, max_length=4096, padding="max_length", truncation=True)
 
-    #labels = tokenizer(labels, max_length=4096, padding="max_length", truncation=True)
+    inputs["labels"] = inputs["input_ids"].copy()
 
-    return {"input_ids": inputs["input_ids"], "labels": inputs["input_ids"].copy()}
+    return inputs
 
 dataset = train_dataset["train"].map(preprocess_function)
 
