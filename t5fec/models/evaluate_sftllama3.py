@@ -31,7 +31,7 @@ def generate_response(mutated_text, evidence_text, max_new_tokens=100):
     input_text = f"mutation:'{mutated_text}'\n\nevidence:'{evidence_text}'\n\n"
 
     # 进行 Tokenization
-    inputs = tokenizer(input_text, max_length=4096, padding="max_length", truncation=True, return_tensors="pt")
+    inputs = tokenizer(input_text, max_length=4096, padding="max_length", truncation=True, return_tensors="pt").to("cuda")
 
     # 生成输出
     with torch.no_grad():
