@@ -7,9 +7,8 @@ import os
 os.environ['CUDA_LAUNCH_BLOCKING'] = '4'
 
 # **1. 加载已训练的模型和 Tokenizer**
-model_path = "/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft5"
+model_path = "/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft6"
 test_file = "/work/2024/zhulei/t5fec/t5fec/data/sft.jsonl"
-output_file = "/work/2024/zhulei/t5fec/t5fec/data/predictions.jsonl"
 
 # 加载 tokenizer
 tokenizer = AutoTokenizer.from_pretrained(model_path)
