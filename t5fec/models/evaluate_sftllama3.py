@@ -1,66 +1,71 @@
-import logging
-import sys
-import torch
-from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
+import torch
+import json
 
-logging.basicConfig(
-    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    handlers=[logging.StreamHandler(sys.stdout)],
-)
-logger = logging.getLogger(__name__)
+# **1. 加载已训练的模型和 Tokenizer**
+model_path = "/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft5"
+test_file = "/work/2024/zhulei/t5fec/t5fec/data/sft.jsonl"
+output_file = "/work/2024/zhulei/t5fec/t5fec/data/predictions.jsonl"
 
-def main():
-    # 加载模型和分词器
-    model_path = "/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft3"
-    model = AutoModelForCausalLM.from_pretrained(model_path)
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
-    
-    # 将模型设置为评估模式并移动到GPU
-    model.eval()
-    model.to('cuda')
-    
-    # 加载测试数据集
-    dataset = load_dataset(
-        'json',
-        data_files={'test': '../data/sft.jsonl'}
-    )
-    
-    # 对每个样本进行推理
-    for example in dataset['test']:
-        # 构建输入文本
-        input_text = f"mutation:'{example['mutated']}'\n\nevidence:'{example['gold_evidence']}'\n\n"
-        
-        # 对输入进行编码
-        inputs = tokenizer(input_text, return_tensors='pt', truncation=True, max_length=4096)
-        inputs = {k: v.to('cuda') for k, v in inputs.items()}
-        
-        # 生成输出
-        with torch.no_grad():
-            outputs = model.generate(
-                **inputs,
-                max_new_tokens=256,
-                do_sample=True,
-                temperature=0.7,
-                pad_token_id=tokenizer.eos_token_id
-            )
-        
-        # 解码输出 
-        generated_text = tokenizer.decode(outputs[0], skip_special_tokens=True)
+# 加载 tokenizer
+tokenizer = AutoTokenizer.from_pretrained(model_path)
+tokenizer.pad_token = tokenizer.eos_token  # 确保填充 token
 
-        print(f"\ninput_text:\n{input_text}\n")
-        print(f"\ngenerated_text:\n{generated_text}\n")
-        
-        # 提取<answer>标签中的内容
-        start_idx = generated_text.find('<answer>')
-        end_idx = generated_text.find('</answer>')
-        
-        if start_idx != -1 and end_idx != -1:
-            answer = generated_text[start_idx + len('<answer>'):end_idx].strip()
-            print(f"\nOriginal: {example['mutated']}")
-            print(f"Generated: {answer}\n")
-            print("-" * 100)
+# 加载模型
+model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16, device_map="auto")
+model.eval()
 
-if __name__ == "__main__":
-    main()
+# **2. 定义推理函数**
+def generate_response(mutated_text, evidence_text, max_new_tokens=100):
+    """
+    使用训练好的模型进行推理
+    :param mutated_text: 变异后的文本
+    :param evidence_text: 证据文本
+    :param max_new_tokens: 生成的最大 token 数
+    :return: 生成的修正文本
+    """
+    # 构造输入格式
+    input_text = f"mutation:'{mutated_text}'\n\nevidence:'{evidence_text}'\n\n"
+
+    # 进行 Tokenization
+    inputs = tokenizer(input_text, return_tensors="pt").to("cuda")
+
+    # 生成输出
+    with torch.no_grad():
+        output_ids = model.generate(
+            **inputs,
+            max_new_tokens=max_new_tokens,
+            pad_token_id=tokenizer.eos_token_id
+        )
+
+    # 解码生成的文本
+    output_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+
+    return output_text
+
+# **3. 读取测试集并进行批量推理**
+results = []
+
+with open(test_file, "r", encoding="utf-8") as f:
+    for line in f:
+        sample = json.loads(line.strip())
+        mutated_text = sample["mutated"]
+        evidence_text = sample["gold_evidence"]
+
+        # 生成修正文本
+        generated_text = generate_response(mutated_text, evidence_text)
+
+        # 存储结果
+        results.append({
+            "mutated": mutated_text,
+            "gold_evidence": evidence_text,
+            "original": sample["original"],  # 真实修正文本
+            "generated": generated_text  # 生成的修正文本
+        })
+
+# **4. 将预测结果保存到文件**
+with open(output_file, "w", encoding="utf-8") as f:
+    for result in results:
+        f.write(json.dumps(result, ensure_ascii=False) + "\n")
+
+print(f"测试完成，结果已保存至: {output_file}")
