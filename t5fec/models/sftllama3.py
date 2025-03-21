@@ -34,7 +34,7 @@ dataset = train_dataset["train"].map(preprocess_function)
 
 # 训练参数
 training_args = TrainingArguments(
-    output_dir="/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft5",
+    output_dir="/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft6",
     per_device_train_batch_size=4,
     gradient_accumulation_steps=8,
     gradient_checkpointing=True,
@@ -68,5 +68,5 @@ trainer = SFTTrainer(
 trainer.train()
 
 # 保存最终模型
-trainer.save_model("/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft5")
-tokenizer.save_pretrained("/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft5")
+trainer.save_model("/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft6")
+tokenizer.save_pretrained("/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft6")
