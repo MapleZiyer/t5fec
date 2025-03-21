@@ -30,7 +30,7 @@ def generate_response(mutated_text, evidence_text, max_new_tokens=100):
     :return: 生成的修正文本
     """
     # 构造输入格式
-    input_text = f"mutation:'{mutated_text}'\n\nevidence:'{evidence_text}'\n\n"
+    input_text = f"mutation:'{mutated_text}'\n\nevidence:'{evidence_text}'\n\n__ANSWER__"
 
     # 进行 Tokenization
     inputs = tokenizer(input_text, max_length=4096, padding=True, truncation=True, return_tensors="pt")
