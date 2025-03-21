@@ -1,10 +1,6 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 import json
-import os
-
-# 设置CUDA环境变量以便调试
-os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 
 # **1. 加载已训练的模型和 Tokenizer**
 model_path = "/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft6"
