@@ -4,7 +4,7 @@ import json
 import os
 
 # 设置CUDA环境变量以便调试
-os.environ['CUDA_LAUNCH_BLOCKING'] = '4'
+os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 
 # **1. 加载已训练的模型和 Tokenizer**
 model_path = "/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft6"
@@ -31,22 +31,36 @@ def generate_response(mutated_text, evidence_text, max_new_tokens=100):
     input_text = f"mutation:'{mutated_text}'\n\nevidence:'{evidence_text}'\n\n"
 
     # 进行 Tokenization
-    inputs = tokenizer(input_text, max_length=4096, padding="max_length", truncation=True, return_tensors="pt").to("cuda")
+    inputs = tokenizer(input_text, max_length=4096, padding=True, truncation=True, return_tensors="pt")
+    
+    # 打印调试信息
+    print(f"Input shape: {inputs['input_ids'].shape}")
+    print(f"Attention mask shape: {inputs['attention_mask'].shape}")
+    
+    # 确保输入维度正确
+    if len(inputs['input_ids'].shape) == 1:
+        inputs['input_ids'] = inputs['input_ids'].unsqueeze(0)
+        inputs['attention_mask'] = inputs['attention_mask'].unsqueeze(0)
+    
+    # 将输入移动到GPU
+    inputs = {k: v.to("cuda") for k, v in inputs.items()}
 
     # 生成输出
     with torch.no_grad():
         output_ids = model.generate(
-            **inputs,
+            input_ids=inputs["input_ids"],
+            attention_mask=inputs["attention_mask"],
             max_new_tokens=max_new_tokens,
             pad_token_id=tokenizer.eos_token_id,
-            do_sample=False,  # 使用贪婪解码
-            temperature=None,  # 显式设置为 None，避免警告
-            top_p=None
+            do_sample=True,
+            temperature=0.7,
+            top_p=0.9,
+            num_return_sequences=1,
+            use_cache=True
         )
 
     # 解码生成的文本
-    print(f"Output:{output_ids}")
-    output_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
+    output_text = tokenizer.decode(output_ids[0][0], skip_special_tokens=True)
 
     return output_text
 
