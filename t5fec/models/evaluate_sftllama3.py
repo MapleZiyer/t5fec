@@ -44,7 +44,6 @@ def generate_response(mutated_text, evidence_text, max_new_tokens=100):
     return output_text
 
 # **3. 读取测试集并进行批量推理**
-results = []
 
 with open(test_file, "r", encoding="utf-8") as f:
     for line in f:
@@ -56,16 +55,14 @@ with open(test_file, "r", encoding="utf-8") as f:
         generated_text = generate_response(mutated_text, evidence_text)
 
         # 存储结果
-        results.append({
+        results = {
             "mutated": mutated_text,
             "gold_evidence": evidence_text,
             "original": sample["original"],  # 真实修正文本
             "generated": generated_text  # 生成的修正文本
-        })
+        }
 
-# **4. 将预测结果保存到文件**
-with open(output_file, "w", encoding="utf-8") as f:
-    for result in results:
-        f.write(json.dumps(result, ensure_ascii=False) + "\n")
+        print(f"Results: {results}")
+
 
 print(f"测试完成，结果已保存至: {output_file}")
