@@ -1,6 +1,10 @@
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 import json
+import os
+
+# 设置CUDA环境变量以便调试
+os.environ['CUDA_LAUNCH_BLOCKING'] = '4'
 
 # **1. 加载已训练的模型和 Tokenizer**
 model_path = "/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft5"
@@ -32,10 +36,13 @@ def generate_response(mutated_text, evidence_text, max_new_tokens=100):
 
     # 生成输出
     with torch.no_grad():
+        model = model.to("cuda")
         output_ids = model.generate(
             **inputs,
             max_new_tokens=max_new_tokens,
-            pad_token_id=tokenizer.eos_token_id
+            pad_token_id=tokenizer.eos_token_id,
+            temperature=0.3,  # 降低temperature以减少随机性
+            do_sample=False  # 使用贪婪解码
         )
 
     # 解码生成的文本
