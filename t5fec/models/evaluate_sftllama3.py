@@ -13,9 +13,11 @@ test_file = "/work/2024/zhulei/t5fec/t5fec/data/sft.jsonl"
 # 加载 tokenizer
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 tokenizer.pad_token = tokenizer.eos_token  # 确保填充 token
+tokenizer.add_tokens(['__ANSWER__'])  # 添加特殊token
 
 # 加载模型
 model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16, device_map="auto")
+model.resize_token_embeddings(len(tokenizer))  # 调整模型词表大小
 model.eval()
 
 # **2. 定义推理函数**
