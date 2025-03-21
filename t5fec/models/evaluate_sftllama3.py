@@ -33,19 +33,7 @@ def generate_response(mutated_text, evidence_text, max_new_tokens=100):
     input_text = f"mutation:'{mutated_text}'\n\nevidence:'{evidence_text}'\n\n__ANSWER__"
 
     # 进行 Tokenization
-    inputs = tokenizer(input_text, max_length=4096, padding=True, truncation=True, return_tensors="pt")
-    
-    # 打印调试信息
-    print(f"Input shape: {inputs['input_ids'].shape}")
-    print(f"Attention mask shape: {inputs['attention_mask'].shape}")
-    
-    # 确保输入维度正确
-    if len(inputs['input_ids'].shape) == 1:
-        inputs['input_ids'] = inputs['input_ids'].unsqueeze(0)
-        inputs['attention_mask'] = inputs['attention_mask'].unsqueeze(0)
-    
-    # 将输入移动到GPU
-    inputs = {k: v.to("cuda") for k, v in inputs.items()}
+    inputs = tokenizer(input_text, max_length=4096, padding=True, truncation=True, return_tensors="pt").to('cuda')
 
     # 生成输出
     with torch.no_grad():
