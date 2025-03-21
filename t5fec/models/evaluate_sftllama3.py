@@ -60,7 +60,7 @@ def generate_response(mutated_text, evidence_text, max_new_tokens=100):
         )
 
     # 解码生成的文本
-    output_text = tokenizer.decode(output_ids[0][0], skip_special_tokens=True)
+    output_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
 
     return output_text
 
