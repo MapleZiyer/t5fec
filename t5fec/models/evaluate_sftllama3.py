@@ -9,12 +9,13 @@ test_file = "/work/2024/zhulei/t5fec/t5fec/data/sft.jsonl"
 # 加载 tokenizer
 tokenizer = AutoTokenizer.from_pretrained(model_path)
 tokenizer.pad_token = tokenizer.eos_token  # 确保填充 token
-tokenizer.add_tokens(['__ANSWER__'])  # 添加特殊token
 
 # 加载模型
 model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloat16, device_map="auto")
-model.resize_token_embeddings(len(tokenizer))  # 调整模型词表大小
 model.eval()
+
+model.config.temperature = None
+model.config.top_p = None
 
 # **2. 定义推理函数**
 def generate_response(mutated_text, evidence_text, max_new_tokens=100):
@@ -26,7 +27,7 @@ def generate_response(mutated_text, evidence_text, max_new_tokens=100):
     :return: 生成的修正文本
     """
     # 构造输入格式
-    input_text = f"mutation:'{mutated_text}'\n\nevidence:'{evidence_text}'\n\n__ANSWER__"
+    input_text = f"mutation:'{mutated_text}'\n\nevidence:'{evidence_text}'\n\n"
 
     # 进行 Tokenization
     inputs = tokenizer(input_text, max_length=4096, padding=True, truncation=True, return_tensors="pt").to('cuda')
@@ -40,11 +41,9 @@ def generate_response(mutated_text, evidence_text, max_new_tokens=100):
             pad_token_id=tokenizer.eos_token_id,
             do_sample=False,  # 使用贪婪解码
             temperature=None,
-            top_p=None,
-            num_return_sequences=1,
-            use_cache=True
+            top_p=None
         )
-
+    
     # 解码生成的文本
     output_text = tokenizer.decode(output_ids[0], skip_special_tokens=True)
 
@@ -71,5 +70,3 @@ with open(test_file, "r", encoding="utf-8") as f:
 
         print(f"Results: {results}")
 
-
-print(f"测试完成，结果已保存至: {output_file}")
