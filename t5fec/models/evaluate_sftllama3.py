@@ -36,7 +36,6 @@ def generate_response(mutated_text, evidence_text, max_new_tokens=100):
 
     # 生成输出
     with torch.no_grad():
-        model = model.to("cuda")
         output_ids = model.generate(
             **inputs,
             max_new_tokens=max_new_tokens,
