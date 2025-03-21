@@ -40,7 +40,8 @@ def generate_response(mutated_text, evidence_text, max_new_tokens=100):
             max_new_tokens=max_new_tokens,
             pad_token_id=tokenizer.eos_token_id,
             temperature=0.3,  # 降低temperature以减少随机性
-            do_sample=False  # 使用贪婪解码
+            do_sample=False,  # 使用贪婪解码
+            top_p=None  # 移除top_p参数
         )
 
     # 解码生成的文本
