@@ -52,9 +52,9 @@ def generate_response(mutated_text, evidence_text, max_new_tokens=100):
             attention_mask=inputs["attention_mask"],
             max_new_tokens=max_new_tokens,
             pad_token_id=tokenizer.eos_token_id,
-            do_sample=True,
-            temperature=0.7,
-            top_p=0.9,
+            do_sample=False,  # 使用贪婪解码
+            temperature=None,
+            top_p=None,
             num_return_sequences=1,
             use_cache=True
         )
