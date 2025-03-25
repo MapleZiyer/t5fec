@@ -51,9 +51,12 @@ training_args = TrainingArguments(
     bf16=True,
     evaluation_strategy="no",
     save_total_limit=2,
-    report_to="none",
-    do_sample=False
+    report_to="none"
 )
+
+if hasattr(training_args, "do_sample"):
+    delattr(training_args, "do_sample")
+print(f"\ntraining_args:{training_args.to_dict()}\n")
 
 # SFT 训练器
 trainer = SFTTrainer(
