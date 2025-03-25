@@ -43,6 +43,6 @@ for sample in test_samples[:5]:  # 这里只测试前5个样本
     gold_evidence = sample["gold_evidence"]
     
     generated_text = generate_response(mutated, gold_evidence)
-    print(f"Mutation: {mutated}")
-    print(f"Gold Evidence: {gold_evidence}")
-    print(f"Generated Response: {generated_text}\n")
+    print(f"\nMutation: \n{mutated}\n")
+    print(f"Gold Evidence: \n{gold_evidence}\n")
+    print(f"Generated Response: \n{generated_text}\n")
