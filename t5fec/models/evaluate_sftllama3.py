@@ -11,7 +11,7 @@ model = AutoModelForCausalLM.from_pretrained(model_path, torch_dtype=torch.bfloa
 # 设置 padding token
 tokenizer.pad_token = tokenizer.eos_token 
 
-def generate_response(mutated, gold_evidence, max_length=512):
+def generate_response(mutated, gold_evidence, max_length=4096):
     # 构造输入
     prompt = f"mutation:'{mutated}'\n\nevidence:'{gold_evidence}'"
     
