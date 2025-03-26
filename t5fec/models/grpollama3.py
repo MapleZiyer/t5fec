@@ -49,10 +49,10 @@ class GRPOScriptArguments:
     )
 
 def main():
-    checkpoint_dir="../checkpoints/Llama-3.2-1B-Instruct3"
+    checkpoint_dir="/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft3"
     # 训练参数设置
     training_args = transformers.TrainingArguments(
-        output_dir="../checkpoints/llama-3.2-1b-instruct-grpo",
+        output_dir="/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft-grpo",
         learning_rate=2e-5,
         num_train_epochs=1,
         per_device_train_batch_size=4,  # 适合单GPU的batch size
@@ -152,10 +152,20 @@ def main():
 
     # 数据预处理函数
     def preprocess_function(examples):
-        data_instance = f"mutation:'{examples['claim']}'\n\nevidence:'{examples['evidence']}'\n\n"
+        prompt = """
+        You are a feature error correction assistant. The user provides an incorrect statement, and you need to correct it. Evidence for correcting this incorrect statement will be provided to you, and you must use the given evidence to revise the incorrect statement. Only correct the erroneous parts of the sentence while keeping the rest intact. All the information contained in the original sentence must be retained and cannot be deleted, only modified.The corrected sentence must not be exactly the same as the original sentence.The original meaning of the sentence must not be changed.The revised statement should not differ significantly in semantics and format from the original statement.
+        You must first think through the reasoning process in your mind before providing the user with the answer. The reasoning process and the answer should be enclosed within the <think></think> and <answer></answer> tags, respectively, i.e., <think> reasoning process here </think><answer> answer here </answer>.
+        All your outputs must be wrapped in tags. The thought process should be enclosed in <think></think>, and the final result should be enclosed in <answer></answer>. First, output the reasoning process, then output the final answer.The two pairs of tags must both be output.Each tag pair can and must appear only once.Tags cannot be nested.
+        User:'{original_statement}'.Evidence:'{evidence}' Assistant:
+        """
+        inputs = prompt.format(evidence=examples['evidence'], original_statement=examples['claim'])
+
+        if not inputs.strip():
+            inputs = "No input provided."
+            logger.warning("Empty input detected, using default input")
 
         model_inputs = tokenizer(
-            data_instance,
+            inputs,
             max_length=4096,
             truncation=True,
             padding='max_length',
@@ -168,7 +178,7 @@ def main():
         
         model_inputs["input_ids"] = input_ids
         model_inputs["attention_mask"] = attention_mask
-        model_inputs['prompt'] = data_instance
+        model_inputs['prompt'] = inputs
 
         return model_inputs
 
@@ -194,14 +204,12 @@ def main():
         for output, prompt in zip(completions, prompts):
             output_text = output if isinstance(output, str) else str(output).strip()
 
-            prompt_text = prompt.split("mutation:'")[1].split("'\n\nevidence:'")[0].strip()
-            evidence = prompt.split("evidence:'")[1].split("'\n\n")[0].strip()
+            prompt_text = prompt.split("User:'")[1].split("'.Evidence:")[0].strip()
+            evidence = prompt.split("'.Evidence:'")[1].split("' Assistant:")[0].strip()
 
             print(f"\nOrginal:{prompt_text}\n\n")
-            print(f"\nEvidence:{evidence}\n\n")
             print(f"Model Output:\n{output_text}\n\n")
 
-            # 检查格式是否正确 - 必须先有<think></think>，然后再有<answer></answer>
             answer_start = output_text.find('<answer>')
             answer_end = output_text.find('</answer>')
             
@@ -216,6 +224,13 @@ def main():
                 print(f"Format error: Each tag should appear exactly once\n")
                 rewards.append(0.0)
                 continue
+
+            # 检查所有文本是否都在标签内
+            text_after_answer = output_text[answer_end + len('</answer>'):].strip()
+            if text_after_answer:
+                print(f"Format error: All text must be wrapped in tags\n")
+                rewards.append(0.0)
+                continue
                 
             # 提取answer标签内的内容
             output_text = output_text[answer_start + len('<answer>'):answer_end].strip()
@@ -225,9 +240,20 @@ def main():
                 rewards.append(0.0)
                 continue
 
-            if output_text.strip() == prompt_text.strip():
+            if len(output_text)*1.0 / len(prompt_text) < 0.8 or len(output_text)*1.0 / len(prompt_text) > 1.5:
+                print(f"Format error: Answer too short or too long\n")
+                rewards.append(0.05)
+                continue
+
+            if len(output_text)*1.0 / len(prompt_text) < 0.5 or len(output_text)*1.0 / len(prompt_text) > 2:
+                print(f"Format error: Answer too too short or too too long\n")
                 rewards.append(0.0)
                 continue
+
+            # 标准化处理字符串，移除多余空格和换行符
+            normalized_output = ' '.join(output_text.strip().split())
+            normalized_prompt = ' '.join(prompt_text.strip().split())
+            
 
             # 编码文本并确保维度正确
             output_embedding = similarity_model.encode(
@@ -252,10 +278,15 @@ def main():
             sari = load("He-Xingwei/sari_metric")
             results_sari = sari.compute(sources=[prompt_text], predictions=[output_text], references=[[""]])
             results_sari = results_sari['sari']
-            result_final = similarity*0.3*0.1 + rouge1_f1*0.5*0.3 + results_sari*0.005*0.6
+            result_final = rouge1_f1*0.5*0.3 + results_sari*0.005*0.7
+            if normalized_output == normalized_prompt or (rouge_f1 > 0.8 and similarity>0.8) or similarity>0.9:
+                print(f"Output is exactly the same as input\n")
+                rewards.append(0.05)
+                continue
+
             print(f"Similarity: {similarity},Rouge_f1:{rouge_f1},SARI:{results_sari},Final:{result_final}\n")
             if result_final < 0.3:
-                rewards.append(result_final)
+                rewards.append(similarity)
                 continue
             # 使用事实验证模块评估生成文本
             programs = program_generator.batch_generate_programs(output_text)
@@ -276,7 +307,7 @@ def main():
             if prediction:
                 rewards.append(1.0)
             else:
-                rewards.append(0.5 if result_final+0.2 > 0.5 else result_final+0.2)
+                rewards.append(0.4)
             print(f"\nRewards:{rewards}\n")
         return torch.tensor(rewards, requires_grad=True).clone().detach().requires_grad_(True)
 
