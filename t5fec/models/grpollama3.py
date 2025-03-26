@@ -152,14 +152,8 @@ def main():
 
     # 数据预处理函数
     def preprocess_function(examples):
-        prompt = """
-        You are a feature error correction assistant. The user provides an incorrect statement, and you need to correct it. Evidence for correcting this incorrect statement will be provided to you, and you must use the given evidence to revise the incorrect statement. Only correct the erroneous parts of the sentence while keeping the rest intact. All the information contained in the original sentence must be retained and cannot be deleted, only modified.The corrected sentence must not be exactly the same as the original sentence.The original meaning of the sentence must not be changed.The revised statement should not differ significantly in semantics and format from the original statement.
-        You must first think through the reasoning process in your mind before providing the user with the answer. The reasoning process and the answer should be enclosed within the <think></think> and <answer></answer> tags, respectively, i.e., <think> reasoning process here </think><answer> answer here </answer>.
-        All your outputs must be wrapped in tags. The thought process should be enclosed in <think></think>, and the final result should be enclosed in <answer></answer>. First, output the reasoning process, then output the final answer.The two pairs of tags must both be output.Each tag pair can and must appear only once.Tags cannot be nested.
-        User:'{original_statement}'.Evidence:'{evidence}' Assistant:
-        """
-        inputs = prompt.format(evidence=examples['evidence'], original_statement=examples['claim'])
-
+        inputs = f"mutation:'{examples['mutated']}'\n\nevidence:'{examples['gold_evidence']}'"
+        
         if not inputs.strip():
             inputs = "No input provided."
             logger.warning("Empty input detected, using default input")
@@ -204,8 +198,8 @@ def main():
         for output, prompt in zip(completions, prompts):
             output_text = output if isinstance(output, str) else str(output).strip()
 
-            prompt_text = prompt.split("User:'")[1].split("'.Evidence:")[0].strip()
-            evidence = prompt.split("'.Evidence:'")[1].split("' Assistant:")[0].strip()
+            prompt_text = prompt.split("mutation:'")[1].split("'\n\nevidence:")[0].strip()
+            evidence = prompt.split("evidence:'")[1].split("'")[0].strip()
 
             print(f"\nOrginal:{prompt_text}\n\n")
             print(f"Model Output:\n{output_text}\n\n")
