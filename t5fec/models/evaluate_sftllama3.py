@@ -2,7 +2,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
 
 # 训练好的模型路径
-model_path = "/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft3"
+model_path = "/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft4"
 
 # 加载 tokenizer 和模型
 tokenizer = AutoTokenizer.from_pretrained(model_path)
