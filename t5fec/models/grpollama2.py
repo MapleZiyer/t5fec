@@ -49,7 +49,7 @@ class GRPOScriptArguments:
     )
 
 def main():
-    checkpoint_dir="../checkpoints/Llama-3.2-1B-Instruct333"
+    checkpoint_dir="../checkpoints/Llama-3.2-1B-Instruct333333"
     # 训练参数设置
     training_args = transformers.TrainingArguments(
         output_dir="/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-grpo",
@@ -242,7 +242,8 @@ def main():
                 
             # 提取answer标签内的内容
             output_text = output_text[answer_start + len('<answer>'):answer_end].strip()
-            
+            print(f"\n<answer>:\n{output_text}\n")
+
             if output_text.count('<') > 0 and output_text.count('>') > 0:
                 print(f"Format error: More tag\n")
                 rewards.append(0.0)
