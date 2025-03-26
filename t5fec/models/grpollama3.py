@@ -152,7 +152,7 @@ def main():
 
     # 数据预处理函数
     def preprocess_function(examples):
-        inputs = f"mutation:'{examples['mutated']}'\n\nevidence:'{examples['gold_evidence']}'"
+        inputs = f"mutation:'{examples['claim']}'\n\nevidence:'{examples['evidence']}'"
         
         if not inputs.strip():
             inputs = "No input provided."
