@@ -52,7 +52,7 @@ def main():
     checkpoint_dir="/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft4"
     # 训练参数设置
     training_args = transformers.TrainingArguments(
-        output_dir="/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-grpo",
+        output_dir="/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft-grpo",
         learning_rate=2e-5,
         num_train_epochs=1,
         per_device_train_batch_size=4,  # 适合单GPU的batch size
