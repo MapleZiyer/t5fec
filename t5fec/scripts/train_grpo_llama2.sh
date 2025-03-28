@@ -15,6 +15,8 @@ echo "CUDA_VISIBLE_DEVICES: ${CUDA_VISIBLE_DEVICES}"
 echo "TRANSFORMERS_CACHE: ${TRANSFORMERS_CACHE}"
 echo "WANDB_PROJECT: ${WANDB_PROJECT}"
 
+mkdir -p /work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft-grpo2
+
 # 运行训练脚本
 echo "Starting training..."
 python ../models/grpollama2.py
