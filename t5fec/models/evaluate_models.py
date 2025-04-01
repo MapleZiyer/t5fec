@@ -91,7 +91,7 @@ def calculate_metrics(original, prediction, references):
     rouge2_f1 = scores['rouge2'].fmeasure
     rougeL_f1 = scores['rougeL'].fmeasure
     
-    sari_score = sari_metric.compute(sources=[original], predictions=[prediction], references=[references])
+    sari_score = sari_metric.compute(sources=[original], predictions=[prediction], references=[[references]])
     
     return {
         'rouge1': rouge1_f1,
