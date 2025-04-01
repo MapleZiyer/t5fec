@@ -250,7 +250,7 @@ def main():
 
             if len(output_text)*1.0 / len(prompt_text) < 0.8 or len(output_text)*1.0 / len(prompt_text) > 1.5:
                 print(f"Format error: Answer too short or too long\n")
-                rewards.append(0.05)
+                rewards.append(0.0)
                 continue
 
             if len(output_text)*1.0 / len(prompt_text) < 0.5 or len(output_text)*1.0 / len(prompt_text) > 2:
@@ -289,7 +289,7 @@ def main():
             result_final = rouge1_f1*0.5
             if normalized_output == normalized_prompt or (rouge_f1 > 0.8 and similarity>0.8) or similarity>0.9:
                 print(f"Output is exactly the same as input\n")
-                rewards.append(0.05)
+                rewards.append(0.0)
                 continue
 
             print(f"Similarity: {similarity},Rouge_f1:{rouge_f1},SARI:{results_sari},Final:{result_final}\n")
