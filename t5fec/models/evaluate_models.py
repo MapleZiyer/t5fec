@@ -79,7 +79,7 @@ def generate_correction(model, tokenizer, mutated, evidence, max_length=4096):
         return answer
     else:
         # 如果没有找到标签，返回整个响应
-        return None
+        return response
 
 def calculate_metrics(original, prediction, references):
     """计算SARI和ROUGE指标"""
