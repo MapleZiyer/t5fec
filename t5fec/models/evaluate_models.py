@@ -29,7 +29,6 @@ TEST_DATA_PATH = "/work/2024/zhulei/t5fec/t5fec/data/gold_negate_8-shot_2-retrie
 sari_metric = load("He-Xingwei/sari_metric")
 
 # 初始化ROUGE评分器
-rouge_scorer_instance = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
 
 def load_model_and_tokenizer(model_path):
     """加载模型和分词器"""
@@ -85,8 +84,8 @@ def generate_correction(model, tokenizer, mutated, evidence, max_length=4096):
 def calculate_metrics(original, prediction, references):
     """计算SARI和ROUGE指标"""
     # 计算ROUGE分数
-    scorer = rouge_scorer_instance
-    scores = scorer.score(original, prediction)
+    scorer = rouge_scorer.RougeScorer(['rouge1', 'rouge2', 'rougeL'], use_stemmer=True)
+    scores = scorer.score(original,prediction)
     rouge1_f1 = scores['rouge1'].fmeasure
     rouge2_f1 = scores['rouge2'].fmeasure
     rougeL_f1 = scores['rougeL'].fmeasure
@@ -133,8 +132,10 @@ def evaluate_models():
         
         # 模型1生成
         prediction1 = generate_correction(model1, tokenizer1, mutated, evidence)
+        print(f"\nprediction1:\n{prediction1}\n")
         # 模型2生成
         prediction2 = generate_correction(model2, tokenizer2, mutated, evidence)
+        print(f"\nprediction2:\n{prediction2}\n")
 
         if prediction1 is None or prediction2 is None:
             logger.warning(f"Failed to generate prediction for sample {i + 1}. Skipping.")
