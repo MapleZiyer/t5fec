@@ -82,21 +82,21 @@ def generate_correction(model, tokenizer, mutated, evidence, max_length=4096):
         # 如果没有找到标签，返回整个响应
         return None
 
-def calculate_metrics(original, prediction, references=None):
+def calculate_metrics(original, prediction, references):
     """计算SARI和ROUGE指标"""
     # 计算ROUGE分数
-    rouge_scores = rouge_scorer_instance.score(original, prediction)
+    scorer = rouge_scorer_instance
+    scores = scorer.score(original, prediction)
+    rouge1_f1 = scores['rouge1'].fmeasure
+    rouge2_f1 = scores['rouge2'].fmeasure
+    rougeL_f1 = scores['rougeL'].fmeasure
     
-    # 计算SARI分数 (需要源文本、预测文本和参考文本)
-    if references is None:
-        references = [[""]]  # 如果没有参考文本，使用空字符串
-    
-    sari_score = sari_metric.compute(sources=[original], predictions=[prediction], references=references)
+    sari_score = sari_metric.compute(sources=[original], predictions=[prediction], references=[references])
     
     return {
-        'rouge1': rouge_scores['rouge1'].fmeasure,
-        'rouge2': rouge_scores['rouge2'].fmeasure,
-        'rougeL': rouge_scores['rougeL'].fmeasure,
+        'rouge1': rouge1_f1,
+        'rouge2': rouge2_f1,
+        'rougeL': rougeL_f1,
         'sari': sari_score['sari']
     }
 
@@ -136,13 +136,13 @@ def evaluate_models():
         # 模型2生成
         prediction2 = generate_correction(model2, tokenizer2, mutated, evidence)
 
-        if(prediction1 or prediction2) is None:
+        if prediction1 is None or prediction2 is None:
             logger.warning(f"Failed to generate prediction for sample {i + 1}. Skipping.")
             continue
         
         # 计算指标
-        metrics1 = calculate_metrics(original, prediction1)
-        metrics2 = calculate_metrics(original, prediction2)
+        metrics1 = calculate_metrics(mutated, prediction1, original)
+        metrics2 = calculate_metrics(mutated, prediction2, original)
         
         # 存储结果
         for metric in ['rouge1', 'rouge2', 'rougeL', 'sari']:
