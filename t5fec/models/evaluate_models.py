@@ -23,7 +23,7 @@ MODEL1_PATH = "/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-g
 MODEL2_PATH = "/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft-grpo"  # grpollama3.py训练的模型
 
 # 测试数据路径
-TEST_DATA_PATH = "/Users/bytedance/t5fec/t5fec/data/gold_negate_8-shot_2-retrieved-evidence_dev_gpt-3.5-turbo.jsonl"
+TEST_DATA_PATH = "/work/2024/zhulei/t5fec/t5fec/data/gold_negate_8-shot_2-retrieved-evidence_dev_gpt-3.5-turbo.jsonl"
 
 # 加载SARI评估指标
 sari_metric = load("He-Xingwei/sari_metric")
