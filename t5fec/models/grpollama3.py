@@ -52,7 +52,7 @@ def main():
     checkpoint_dir="/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft4"
     # 训练参数设置
     training_args = transformers.TrainingArguments(
-        output_dir="/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft-grpo",
+        output_dir="/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft-grpo2",
         learning_rate=2e-5,
         num_train_epochs=1,
         per_device_train_batch_size=4,  # 适合单GPU的batch size
@@ -286,7 +286,7 @@ def main():
             sari = load("He-Xingwei/sari_metric")
             results_sari = sari.compute(sources=[prompt_text], predictions=[output_text], references=[[""]])
             results_sari = results_sari['sari']
-            result_final = rouge1_f1*0.5*0.5 + results_sari*0.005*0.5
+            result_final = rouge1_f1*0.5
             if normalized_output == normalized_prompt or (rouge_f1 > 0.8 and similarity>0.8) or similarity>0.9:
                 print(f"Output is exactly the same as input\n")
                 rewards.append(0.05)
