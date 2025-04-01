@@ -19,8 +19,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # 模型路径
-MODEL1_PATH = "/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-grpo2"  # grpollama2.py训练的模型
-MODEL2_PATH = "/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft-grpo2"  # grpollama3.py训练的模型
+MODEL1_PATH = "/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-grpo"  # grpollama2.py训练的模型
+MODEL2_PATH = "/work/2024/zhulei/t5fec/t5fec/checkpoints/llama-3.2-1b-instruct-sft-grpo"  # grpollama3.py训练的模型
 
 # 测试数据路径
 TEST_DATA_PATH = "/Users/bytedance/t5fec/t5fec/data/gold_negate_8-shot_2-retrieved-evidence_dev_gpt-3.5-turbo.jsonl"
@@ -80,19 +80,7 @@ def generate_correction(model, tokenizer, mutated, evidence, max_length=4096):
         return answer
     else:
         # 如果没有找到标签，返回整个响应
-        return response
-
-def extract_correction(response):
-    """从模型响应中提取修正后的文本"""
-    # 尝试提取<answer>标签中的内容
-    answer_start = response.find('<answer>')
-    answer_end = response.find('</answer>')
-    
-    if answer_start != -1 and answer_end != -1:
-        return response[answer_start + len('<answer>'):answer_end].strip()
-    
-    # 如果没有标签，返回整个响应
-    return response.strip()
+        return None
 
 def calculate_metrics(original, prediction, references=None):
     """计算SARI和ROUGE指标"""
@@ -147,6 +135,10 @@ def evaluate_models():
         prediction1 = generate_correction(model1, tokenizer1, mutated, evidence)
         # 模型2生成
         prediction2 = generate_correction(model2, tokenizer2, mutated, evidence)
+
+        if(prediction1 or prediction2) is None:
+            logger.warning(f"Failed to generate prediction for sample {i + 1}. Skipping.")
+            continue
         
         # 计算指标
         metrics1 = calculate_metrics(original, prediction1)
