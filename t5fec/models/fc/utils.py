@@ -1,6 +1,6 @@
 import backoff  # for exponential backoff
 import openai
-from openai import APIError, RateLimitError, APIConnectionError, AuthenticationError, ServiceUnavailableError
+from openai import APIError, RateLimitError, APIConnectionError, AuthenticationError
 import os
 import asyncio
 import logging
@@ -24,7 +24,7 @@ MAX_WAIT = 60     # 最大等待时间（秒）
 
 @backoff.on_exception(
     backoff.expo, 
-    (APIError, RateLimitError, APIConnectionError, TimeoutError, ServiceUnavailableError),
+    (APIError, RateLimitError, APIConnectionError, TimeoutError),
     max_tries=MAX_RETRIES,
     factor=2,
     base=INITIAL_WAIT,
@@ -43,8 +43,8 @@ def completions_with_backoff(**kwargs):
     except AuthenticationError as e:
         logger.error(f"Authentication error: {str(e)}")
         raise
-    except ServiceUnavailableError as e:
-        logger.error(f"Service unavailable: {str(e)}")
+    except APIError as e:
+        logger.error(f"API Error (possibly service unavailable): {str(e)}")
         raise
     except Exception as e:
         logger.error(f"OpenAI API Error: {str(e)}")
@@ -52,7 +52,7 @@ def completions_with_backoff(**kwargs):
 
 @backoff.on_exception(
     backoff.expo, 
-    (APIError, RateLimitError, APIConnectionError, TimeoutError, ServiceUnavailableError),
+    (APIError, RateLimitError, APIConnectionError, TimeoutError),
     max_tries=MAX_RETRIES,
     factor=2,
     base=INITIAL_WAIT,
@@ -71,8 +71,8 @@ def chat_completions_with_backoff(**kwargs):
     except AuthenticationError as e:
         logger.error(f"Authentication error: {str(e)}")
         raise
-    except ServiceUnavailableError as e:
-        logger.error(f"Service unavailable: {str(e)}")
+    except APIError as e:
+        logger.error(f"API Error (possibly service unavailable): {str(e)}")
         raise
     except Exception as e:
         logger.error(f"OpenAI API Error: {str(e)}")
