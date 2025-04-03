@@ -1,29 +1,83 @@
 import backoff  # for exponential backoff
 from openai import OpenAI
+from openai.types.error import APIError, RateLimitError, APIConnectionError, AuthenticationError, ServiceUnavailableError
 import os
 import asyncio
+import logging
 from typing import Any
 
+# 配置日志
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+# 从环境变量获取API密钥，如果不存在则使用默认值
+API_KEY = os.environ.get("OPENAI_API_KEY", "sk-NVz2LEoGeiJ0vMTkt4nwTHestJiEoRcjs8aplkkAEjBPULme")
+BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.bianxie.ai/v1")
+
 client = OpenAI(
-    base_url = "https://api.bianxie.ai/v1",
-    api_key = "sk-NVz2LEoGeiJ0vMTkt4nwTHestJiEoRcjs8aplkkAEjBPULme"
+    base_url = BASE_URL,
+    api_key = API_KEY
 )
 
-@backoff.on_exception(backoff.expo, Exception)
-@backoff.on_exception(backoff.expo, (Exception, TimeoutError), max_tries=3)
+# 定义重试策略的常量
+MAX_RETRIES = 10000
+INITIAL_WAIT = 1  # 初始等待时间（秒）
+MAX_WAIT = 60     # 最大等待时间（秒）
+
+@backoff.on_exception(
+    backoff.expo, 
+    (APIError, RateLimitError, APIConnectionError, TimeoutError, ServiceUnavailableError),
+    max_tries=MAX_RETRIES,
+    factor=2,
+    base=INITIAL_WAIT,
+    max_value=MAX_WAIT
+)
 def completions_with_backoff(**kwargs):
     try:
+        logger.info(f"Sending completion request with model: {kwargs.get('model', 'unknown')}")
         return client.completions.create(**kwargs, timeout=30)
+    except RateLimitError as e:
+        logger.error(f"Rate limit exceeded: {str(e)}")
+        raise
+    except APIConnectionError as e:
+        logger.error(f"API connection error: {str(e)}")
+        raise
+    except AuthenticationError as e:
+        logger.error(f"Authentication error: {str(e)}")
+        raise
+    except ServiceUnavailableError as e:
+        logger.error(f"Service unavailable: {str(e)}")
+        raise
     except Exception as e:
-        print(f"OpenAI API Error: {str(e)}")
+        logger.error(f"OpenAI API Error: {str(e)}")
         raise
 
-@backoff.on_exception(backoff.expo, (Exception, TimeoutError), max_tries=3)
+@backoff.on_exception(
+    backoff.expo, 
+    (APIError, RateLimitError, APIConnectionError, TimeoutError, ServiceUnavailableError),
+    max_tries=MAX_RETRIES,
+    factor=2,
+    base=INITIAL_WAIT,
+    max_value=MAX_WAIT
+)
 def chat_completions_with_backoff(**kwargs):
     try:
+        logger.info(f"Sending chat completion request with model: {kwargs.get('model', 'unknown')}")
         return client.chat.completions.create(**kwargs, timeout=30)
+    except RateLimitError as e:
+        logger.error(f"Rate limit exceeded: {str(e)}")
+        raise
+    except APIConnectionError as e:
+        logger.error(f"API connection error: {str(e)}")
+        raise
+    except AuthenticationError as e:
+        logger.error(f"Authentication error: {str(e)}")
+        raise
+    except ServiceUnavailableError as e:
+        logger.error(f"Service unavailable: {str(e)}")
+        raise
     except Exception as e:
-        print(f"OpenAI API Error: {str(e)}")
+        logger.error(f"OpenAI API Error: {str(e)}")
         raise
 
 async def dispatch_openai_chat_requests(
@@ -47,12 +101,31 @@ async def dispatch_openai_chat_requests(
             )
             for x in messages_list
         ]
-        print(f"Sending {len(messages_list)} requests to OpenAI API...")
-        responses = await asyncio.gather(*async_responses)
-        print("Successfully received all API responses")
+        logger.info(f"Sending {len(messages_list)} requests to OpenAI API...")
+        
+        # 使用gather_with_concurrency限制并发请求数量
+        responses = []
+        for i in range(0, len(async_responses), 5):  # 每批5个请求
+            batch = async_responses[i:i+5]
+            batch_responses = await asyncio.gather(*batch, return_exceptions=True)
+            responses.extend(batch_responses)
+        
+        # 检查是否有异常
+        for i, resp in enumerate(responses):
+            if isinstance(resp, Exception):
+                logger.error(f"Error in request {i}: {str(resp)}")
+                raise resp
+        
+        logger.info("Successfully received all API responses")
         return responses
+    except RateLimitError as e:
+        logger.error(f"Rate limit exceeded in batch requests: {str(e)}")
+        raise
+    except APIConnectionError as e:
+        logger.error(f"API connection error in batch requests: {str(e)}")
+        raise
     except Exception as e:
-        print(f"Error in batch API requests: {str(e)}")
+        logger.error(f"Error in batch API requests: {str(e)}")
         raise
 
 async def dispatch_openai_prompt_requests(
@@ -63,25 +136,52 @@ async def dispatch_openai_prompt_requests(
     top_p: float,
     stop_words: list[str]
 ) -> list[str]:
-    async_responses = [
-        openai.Completion.acreate(
-            model=model,
-            prompt=x,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            top_p=top_p,
-            frequency_penalty = 0.0,
-            presence_penalty = 0.0,
-            stop = stop_words
-        )
-        for x in messages_list
-    ]
-    return await asyncio.gather(*async_responses)
+    try:
+        async_responses = [
+            client.completions.acreate(
+                model=model,
+                prompt=x,
+                temperature=temperature,
+                max_tokens=max_tokens,
+                top_p=top_p,
+                frequency_penalty = 0.0,
+                presence_penalty = 0.0,
+                stop = stop_words,
+                timeout=30
+            )
+            for x in messages_list
+        ]
+        logger.info(f"Sending {len(messages_list)} prompt requests to OpenAI API...")
+        
+        # 使用gather_with_concurrency限制并发请求数量
+        responses = []
+        for i in range(0, len(async_responses), 5):  # 每批5个请求
+            batch = async_responses[i:i+5]
+            batch_responses = await asyncio.gather(*batch, return_exceptions=True)
+            responses.extend(batch_responses)
+        
+        # 检查是否有异常
+        for i, resp in enumerate(responses):
+            if isinstance(resp, Exception):
+                logger.error(f"Error in prompt request {i}: {str(resp)}")
+                raise resp
+        
+        logger.info("Successfully received all prompt API responses")
+        return responses
+    except RateLimitError as e:
+        logger.error(f"Rate limit exceeded in batch prompt requests: {str(e)}")
+        raise
+    except APIConnectionError as e:
+        logger.error(f"API connection error in batch prompt requests: {str(e)}")
+        raise
+    except Exception as e:
+        logger.error(f"Error in batch prompt API requests: {str(e)}")
+        raise
 
 class OpenAIModel:
     def __init__(self, API_KEY, model_name, stop_words, max_new_tokens) -> None:
         self.client = OpenAI(
-            base_url = "https://api.bianxie.ai/v1",
+            base_url = BASE_URL,
             api_key = API_KEY
         )
         self.model_name = model_name
@@ -90,25 +190,7 @@ class OpenAIModel:
 
     # used for chat-gpt and gpt-4
     def chat_generate(self, input_string, temperature = 0.0):
-        client = OpenAI(
-            base_url = "https://api.bianxie.ai/v1",
-            api_key = "sk-NVz2LEoGeiJ0vMTkt4nwTHestJiEoRcjs8aplkkAEjBPULme"
-        )
-
-        completion = client.chat.completions.create(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {
-                        "role": "user",
-                        "content": input_string
-                    }
-                ],
-                max_tokens = self.max_new_tokens,
-                temperature = temperature,
-                top_p = 1.0,
-                stop = self.stop_words
-            )   
-        """
+        # 使用带有重试逻辑的函数
         response = chat_completions_with_backoff(
                 model = self.model_name,
                 messages=[
@@ -119,8 +201,7 @@ class OpenAIModel:
                 top_p = 1.0,
                 stop = self.stop_words
         )
-        """
-        generated_text = completion.choices[0].message.content.strip()
+        generated_text = response.choices[0].message.content.strip()
         return generated_text
     
     # used for text/code-davinci
