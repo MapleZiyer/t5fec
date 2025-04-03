@@ -1,6 +1,6 @@
 import backoff  # for exponential backoff
-from openai import OpenAI
-from openai.types.error import APIError, RateLimitError, APIConnectionError, AuthenticationError, ServiceUnavailableError
+import openai
+from openai.error import APIError, RateLimitError, APIConnectionError, AuthenticationError, ServiceUnavailableError
 import os
 import asyncio
 import logging
@@ -14,10 +14,8 @@ logger = logging.getLogger(__name__)
 API_KEY = os.environ.get("OPENAI_API_KEY", "sk-NVz2LEoGeiJ0vMTkt4nwTHestJiEoRcjs8aplkkAEjBPULme")
 BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.bianxie.ai/v1")
 
-client = OpenAI(
-    base_url = BASE_URL,
-    api_key = API_KEY
-)
+openai.api_base = BASE_URL
+openai.api_key = API_KEY
 
 # 定义重试策略的常量
 MAX_RETRIES = 10000
@@ -35,7 +33,7 @@ MAX_WAIT = 60     # 最大等待时间（秒）
 def completions_with_backoff(**kwargs):
     try:
         logger.info(f"Sending completion request with model: {kwargs.get('model', 'unknown')}")
-        return client.completions.create(**kwargs, timeout=30)
+        return openai.Completion.create(**kwargs, timeout=30)
     except RateLimitError as e:
         logger.error(f"Rate limit exceeded: {str(e)}")
         raise
@@ -63,7 +61,7 @@ def completions_with_backoff(**kwargs):
 def chat_completions_with_backoff(**kwargs):
     try:
         logger.info(f"Sending chat completion request with model: {kwargs.get('model', 'unknown')}")
-        return client.chat.completions.create(**kwargs, timeout=30)
+        return openai.ChatCompletion.create(**kwargs, timeout=30)
     except RateLimitError as e:
         logger.error(f"Rate limit exceeded: {str(e)}")
         raise
@@ -90,7 +88,7 @@ async def dispatch_openai_chat_requests(
 ) -> list[str]:
     try:
         async_responses = [
-            client.chat.completions.acreate(
+            openai.ChatCompletion.acreate(
                 model=model,
                 messages=x,
                 temperature=temperature,
@@ -138,7 +136,7 @@ async def dispatch_openai_prompt_requests(
 ) -> list[str]:
     try:
         async_responses = [
-            client.completions.acreate(
+            openai.Completion.acreate(
                 model=model,
                 prompt=x,
                 temperature=temperature,
@@ -180,10 +178,8 @@ async def dispatch_openai_prompt_requests(
 
 class OpenAIModel:
     def __init__(self, API_KEY, model_name, stop_words, max_new_tokens) -> None:
-        self.client = OpenAI(
-            base_url = BASE_URL,
-            api_key = API_KEY
-        )
+        openai.api_base = BASE_URL
+        openai.api_key = API_KEY
         self.model_name = model_name
         self.max_new_tokens = max_new_tokens
         self.stop_words = stop_words
