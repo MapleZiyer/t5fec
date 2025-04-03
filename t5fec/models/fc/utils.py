@@ -1,6 +1,6 @@
 import backoff  # for exponential backoff
 import openai
-from openai.error import APIError, RateLimitError, APIConnectionError, AuthenticationError, ServiceUnavailableError
+from openai import APIError, RateLimitError, APIConnectionError, AuthenticationError, ServiceUnavailableError
 import os
 import asyncio
 import logging
